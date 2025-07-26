@@ -1,0 +1,10 @@
+[package]
+name = "dsb"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+atools = "0.1.6"
+fimg = "0.4.45"
+implicit-fn = "0.1.0"
+swash = "0.2.5"
