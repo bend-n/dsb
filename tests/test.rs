@@ -14,7 +14,8 @@ fn main() {
 
     dbg!(cols, rows);
 
-    let cells = include_str!("../src/lib.rs")
+    let cells = //include_str!("../src/lib.rs")
+    "||||ppppppre|rlly rea(ly regl(y fugck thgis i plight is hard plifhgt plongkokignpookfiokogk"
         .chars()
         .filter(|x| !x.is_whitespace())
         .take(cols * rows)
