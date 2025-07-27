@@ -89,8 +89,6 @@ checksum = "6a02dba6a60cd31533cf16561ced53239686d18f1464bff49579dd320fcea081"
 [[package]]
 name = "fimg"
 version = "0.4.45"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6739c38489a0264e04537f68b822f4cb7abb732b41eca5229a91685fcc998939"
 dependencies = [
  "atools",
  "clipline",

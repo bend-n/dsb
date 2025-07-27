@@ -1,3 +1,5 @@
+// |jlfJKlBM
+// |||||||||||||||||||||||||||||||||||||
 #![allow(incomplete_features)]
 #![feature(
     super_let,
@@ -12,7 +14,7 @@
     import_trait_associated_functions
 )]
 use std::iter::zip;
-mod cell;
+pub mod cell;
 use atools::Join;
 use swash::FontRef;
 use swash::scale::{Render, ScaleContext, Source};
@@ -46,36 +48,42 @@ impl<'a, 'b, 'c, 'd> Fonts<'a, 'b, 'c, 'd> {
 #[implicit_fn::implicit_fn]
 pub unsafe fn render(
     cells: &[Cell],
-    (w, h): (usize, usize),
+    (c, r): (usize, usize),
     ppem: f32,
     bgcolor: [u8; 3],
     fonts: Fonts,
+    line_spacing: f32,
 ) -> Image<Box<[u8]>, 3> {
-    let m = fonts.regular.metrics(&[]);
-    let sz = ppem * (m.max_width / m.units_per_em as f32);
+    assert_eq!(c * r, cells.len(), "cells too short.");
+
+    let (fw, h) = dims(&fonts.regular, ppem, line_spacing);
+    let fh = h - line_spacing;
+    let (w, h) = ((fw * c as f32).ceil() as u32, (h * r as f32).ceil() as u32);
     let mut i = Image::build(w as _, h as _).fill(bgcolor);
     if w < 60 || h < 60 {
         return i;
     }
 
-    for (col, k) in cells.chunks_exact(w as _).zip(0..) {
+    for (col, k) in cells.chunks_exact(c as _).zip(0..) {
         for (&cell, j) in zip(col, 0..) {
             if cell.style.bg != bgcolor {
-                let cell = Image::<_, 4>::build(sz.ceil() as u32, (ppem * 1.25).ceil() as u32)
-                    .fill(cell.style.bg.join(255));
+                let cell =
+                    Image::<_, 4>::build(fw.ceil() as u32, (fh + line_spacing).round() as u32)
+                        .fill(cell.style.bg.join(255));
+
                 unsafe {
                     i.as_mut().overlay_at(
                         &cell,
-                        4 + (j as f32 * sz) as u32,
-                        (k as f32 * (ppem * 1.25)) as u32 - 20,
+                        (j as f32 * fw).round() as u32,
+                        (((k) as f32 * fh) + ((k as f32) * line_spacing as f32)).round() as u32,
                     )
                 };
             }
         }
     }
-    let mut characters: Vec<Glyph> = vec![Glyph::default(); w];
+    let mut characters: Vec<Glyph> = vec![Glyph::default(); c];
 
-    for (col, k) in cells.chunks_exact(w as _).zip(0..) {
+    for (col, k) in cells.chunks_exact(c as _).zip(0..) {
         let tokenized = col.iter().enumerate().map(|(i, cell)| {
             let ch = cell.letter.unwrap_or(' ');
             (
@@ -130,24 +138,24 @@ pub unsafe fn render(
             if (cell.style.flags & Style::DIM) != 0 {
                 color = color.map(|x| x / 2);
             }
-            if (cell.style.flags & Style::UNDERLINE) != 0 {
-                unsafe {
-                    i.as_mut().overlay_at(
-                        &Image::<_, 4>::build(sz.ceil() as u32, 2).fill(color.join(255)),
-                        4 + (j as f32 * sz) as u32,
-                        (k as f32 * (ppem * 1.25)) as u32 + 5,
-                    )
-                };
-            }
-            if (cell.style.flags & Style::STRIKETHROUGH) != 0 {
-                unsafe {
-                    i.as_mut().overlay_at(
-                        &Image::<_, 4>::build(sz.ceil() as u32, 2).fill(color.join(255)),
-                        4 + (j as f32 * sz) as u32,
-                        (k as f32 * (ppem * 1.25)) as u32 - 5,
-                    )
-                };
-            }
+            // if (cell.style.flags & Style::UNDERLINE) != 0 {
+            //     unsafe {
+            //         i.as_mut().overlay_at(
+            //             &Image::<_, 4>::build(fw.ceil() as u32, 2).fill(color.join(255)),
+            //             4 + (j as f32 * fw as u32,
+            //             (k as f32 * (ppem * 1.25)) as u32 + 5,
+            //         )
+            //     };
+            // }
+            // if (cell.style.flags & Style::STRIKETHROUGH) != 0 {
+            //     unsafe {
+            //         i.as_mut().overlay_at(
+            //             &Image::<_, 4>::build(fw.ceil() as u32, 2).fill(color.join(255)),
+            //             4 + (j as f32 * fw) as u32,
+            //             (k as f32 * (ppem * 1.25)) as u32 - 5,
+            //         )
+            //     };
+            // }
             if let Some(_) = cell.letter {
                 let f = match cell.style.flags {
                     f if f & (Style::BOLD | Style::ITALIC) != 0 => fonts.bold_italic,
@@ -173,8 +181,12 @@ pub unsafe fn render(
                     i.as_mut().blend_alpha_and_color_at(
                         &item.as_ref(),
                         color,
-                        4 + ((j as f32 * sz + glyph.x) + x.placement.left as f32).round() as u32,
-                        ((k as f32 * (ppem * 1.25)) as u32).saturating_sub(x.placement.top as u32),
+                        ((j as f32 * fw + glyph.x) + x.placement.left as f32).round() as u32,
+                        (
+                            dbg!(((k + 1) as f32 * fh) - (x.placement.top as f32))
+                            // + ((k as f32) * line_spacing as f32)
+                        )
+                        .round() as u32,
                     );
                 }
             }
@@ -195,9 +207,17 @@ pub unsafe fn render(
     i
 }
 
-pub fn dims(font: &FontRef, ppem: f32) -> (f32, f32) {
+pub fn dims(font: &FontRef, ppem: f32, line_spacing: f32) -> (f32, f32) {
+    // ppem * (m.max_width / m.units_per_em as f32),
+    // m.max_width * (ppem / m.units_per_em as f32);
     let m = font.metrics(&[]);
-    (ppem * (m.max_width / m.units_per_em as f32), ppem * 1.25)
+    let f = ppem / m.units_per_em as f32;
+    (
+        m.max_width * f,
+        m.ascent * f + line_spacing,
+        // ((ppem + line_spacing) * (m.ascent / m.units_per_em as f32)),
+    )
 }
-use crate::cell::{Cell, Style};
+pub use crate::cell::Cell;
+use crate::cell::Style;
 use fimg::{Image, OverlayAt};
