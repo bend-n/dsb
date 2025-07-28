@@ -4,21 +4,19 @@ use dsb::{Fonts, cell::Style};
 use swash::FontRef;
 
 fn main() {
-    let ppem = 300.0;
-    let lh = 0.0;
-    let (fw, fh) = dsb::dims(&FONT, ppem, lh);
-    let (w, h) = (2000, 2000);
+    let ppem = 15.0;
+    let lh = 200.0;
+    // let (fw, fh) = dsb::dims(&FONT, ppem);
+    let (w, h) = (1920, 1080);
+    dbg!(w, h);
+    let (c, r) = dsb::fit(&FONT, ppem, lh, (w, h));
 
-    let cols = (w as f32 / fw).floor() as usize;
-    let rows = (h as f32 / fh).floor() as usize;
-
-    dbg!(cols, rows);
-
-    let cells = //include_str!("../src/lib.rs")
-    "||||ppppppre|rlly rea(ly regl(y fugck thgis i plight is hard plifhgt plongkokignpookfiokogk"
+    dbg!(c, r);
+    // panic!();
+    let cells = include_str!("../src/lib.rs")
         .chars()
         .filter(|x| !x.is_whitespace())
-        .take(cols * rows)
+        .take((c * r) as _)
         .map(|x: char| dsb::Cell {
             style: Style {
                 bg: [0; 3],
@@ -28,17 +26,19 @@ fn main() {
             letter: Some(x),
         })
         .collect::<Vec<_>>();
-    unsafe {
+    let x = unsafe {
         dsb::render(
             &cells,
-            (cols, rows),
+            (c, r),
             ppem,
             [1; 3],
             Fonts::new(*FONT, *FONT, *FONT, *FONT),
             lh,
         )
-    }
-    .show();
+    };
+    x.save("yes.png");
+    assert!(x.height() < h as u32);
+    dbg!(x.width(), x.height());
 }
 pub static FONT: LazyLock<FontRef<'static>> = LazyLock::new(|| {
     FontRef::from_index(&include_bytes!("/home/os/CascadiaCodeNF.ttf")[..], 0).unwrap()
