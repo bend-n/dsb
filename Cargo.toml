@@ -5,9 +5,10 @@ edition = "2024"
 
 [dependencies]
 atools = "0.1.6"
-fimg = { path = "../fimg" }
+fimg = { path = "../fimg", features = ["real-show", "save"] }
 # fimg = { git = "https://github.com/bend-n/fimg" }
 implicit-fn = "0.1.0"
+lower = "0.2.0"
 swash = "0.2.5"
 
 [[test]]
