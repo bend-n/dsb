@@ -1,4 +1,4 @@
-// |jlfJKlBM// |||||||||||||||||||||||||||||||||||||#![allow(incomplete_features)]
+#![allow(incomplete_features)]
 #![feature(
     array_chunks,
     super_let,
@@ -15,7 +15,7 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 use std::iter::{successors, zip};
 pub mod cell;
-use atools::{ArrayTools, Join, splat};
+use atools::{ArrayTools, Join};
 use fimg::{Image, OverlayAt};
 use swash::FontRef;
 use swash::scale::{Render, ScaleContext, Source};
@@ -57,6 +57,7 @@ pub unsafe fn render(
     bgcolor: [u8; 3],
     fonts: Fonts,
     line_spacing: f32,
+    subpixel: bool,
 ) -> Image<Box<[u8]>, 3> {
     assert_eq!(c * r, cells.len(), "cells too short.");
     let met = fonts.regular.metrics(&[]);
@@ -182,7 +183,11 @@ pub unsafe fn render(
                 scbd = scbd.size(ppem);
 
                 let x = Render::new(&[Source::Outline])
-                    .format(Format::Subpixel)
+                    .format(if subpixel {
+                        Format::Subpixel
+                    } else {
+                        Format::Alpha
+                    })
                     .render(&mut scbd.build(), id)
                     .unwrap();
 
@@ -197,26 +202,36 @@ pub unsafe fn render(
                     .round() as u32
                     - (met.descent * fac).round() as u32
                     + (k as f32 * line_spacing as f32 * fac) as u32;
-
-                into(
-                    i.as_mut(),
-                    Image::build(x.placement.width, x.placement.height)
+                if subpixel {
+                    into(
+                        i.as_mut(),
+                        Image::build(
+                            x.placement.width,
+                            x.placement.height,
+                        )
                         .buf(&x.data),
-                    (x_, y_),
-                    color.map(_ as u32),
-                    cell.style.bg.map(_ as u32),
-                );
-
-                // i.as_mut().overlay_blended_at(
-                //     &item.as_ref(),
-                //     // color,
-                //     ((j as f32 * fw + glyph.x) + x.placement.left as f32)
-                //         .round() as u32,
-                //     (((k + 1) as f32 * fh) - (x.placement.top as f32))
-                //         .round() as u32
-                //         - (met.descent * fac).round() as u32
-                //         + (k as f32 * line_spacing as f32 * fac) as u32,
-                // );
+                        (x_, y_),
+                        color.map(_ as u32),
+                        cell.style.bg.map(_ as u32),
+                    );
+                } else {
+                    i.as_mut().blend_alpha_and_color_at(
+                        &Image::build(
+                            x.placement.width,
+                            x.placement.height,
+                        )
+                        .buf(&x.data),
+                        color,
+                        ((j as f32 * fw + glyph.x)
+                            + x.placement.left as f32)
+                            .round() as u32,
+                        (((k + 1) as f32 * fh) - (x.placement.top as f32))
+                            .round() as u32
+                            - (met.descent * fac).round() as u32
+                            + (k as f32 * line_spacing as f32 * fac)
+                                as u32,
+                    );
+                }
             }
         }
     }
@@ -251,7 +266,7 @@ fn blend(
 ) -> impl Iterator<Item = [u8; 3]> {
     use atools::pervasive::prelude::*;
     x.array_chunks::<4>().map(move |&mask| {
-        let mask = mask.take::<3>().map(_ as u32);
+        let mask = mask.take::<3>().map(_ as u32).rev();
         color
             .amul(mask)
             .aadd(256.sub(mask).amul(bgcolor))
@@ -278,7 +293,7 @@ fn into(
         ))
         // could opt later
         .for_each(|((x, y), d)| {
-            unsafe { i.set_pixel(x + x_, y + y_, d) };
+            i.get_pixel_mut(x + x_, y + y_).map(*_ = d);
         })
 }
 

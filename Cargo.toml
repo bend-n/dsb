@@ -10,6 +10,7 @@ fimg = { path = "../fimg", features = ["real-show", "save"] }
 implicit-fn = "0.1.0"
 lower = "0.2.0"
 swash = "0.2.5"
+swizzle = "0.1.0"
 
 [[test]]
 name = "test"

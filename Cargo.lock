@@ -130,6 +130,7 @@ dependencies = [
  "implicit-fn",
  "lower",
  "swash",
+ "swizzle",
 ]
 
 [[package]]
@@ -711,6 +712,12 @@ dependencies = [
  "yazi",
  "zeno",
 ]
+
+[[package]]
+name = "swizzle"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9cd32a3a5640a1e8ba59937591c61be77cae746e7c0fa081b24deebb4f7ece4c"
 
 [[package]]
 name = "syn"
