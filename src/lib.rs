@@ -17,29 +17,66 @@ use std::iter::{successors, zip};
 pub mod cell;
 use atools::{ArrayTools, Join};
 use fimg::{Image, OverlayAt};
-use swash::FontRef;
 use swash::scale::{Render, ScaleContext, Source};
 use swash::shape::ShapeContext;
 use swash::shape::cluster::Glyph;
 use swash::text::cluster::{CharCluster, Parser, Token};
 use swash::text::{Codepoint, Script};
 use swash::zeno::Format;
+use swash::{FontRef, Instance};
 
 pub use crate::cell::Cell;
 use crate::cell::Style;
 
 pub struct Fonts<'a, 'b, 'c, 'd> {
-    regular: FontRef<'a>,
-    bold: FontRef<'b>,
-    italic: FontRef<'c>,
-    bold_italic: FontRef<'d>,
+    regular: F<'a>,
+    bold: F<'b>,
+    italic: F<'c>,
+    bold_italic: F<'d>,
 }
+#[derive(Clone, Copy)]
+pub enum F<'a> {
+    FontRef(FontRef<'a>),
+    Instance(FontRef<'a>, Instance<'a>),
+}
+impl<'a, T: Into<FontRef<'a>>> From<T> for F<'a> {
+    fn from(value: T) -> Self {
+        Self::FontRef(value.into())
+    }
+}
+
+impl<'a> std::ops::Deref for F<'a> {
+    type Target = FontRef<'a>;
+
+    fn deref(&self) -> &Self::Target {
+        match self {
+            F::FontRef(font_ref) | F::Instance(font_ref, _) => font_ref,
+        }
+    }
+}
+impl<'a> F<'a> {
+    pub fn instance(of: impl Into<FontRef<'a>>, i: Instance<'a>) -> Self {
+        Self::Instance(of.into(), i)
+    }
+    pub fn variations(&self) -> Box<dyn Iterator<Item = (u32, f32)> + 'a> {
+        match self {
+            F::FontRef(_) => Box::new(std::iter::empty()),
+            F::Instance(font_ref, instance) => Box::new(
+                instance
+                    .values()
+                    .zip(font_ref.variations())
+                    .map(|x| (x.1.tag(), x.0)),
+            ),
+        }
+    }
+}
+
 impl<'a, 'b, 'c, 'd> Fonts<'a, 'b, 'c, 'd> {
     pub fn new(
-        regular: impl Into<FontRef<'a>>,
-        bold: impl Into<FontRef<'b>>,
-        italic: impl Into<FontRef<'c>>,
-        bold_italic: impl Into<FontRef<'d>>,
+        regular: impl Into<F<'a>>,
+        bold: impl Into<F<'b>>,
+        italic: impl Into<F<'c>>,
+        bold_italic: impl Into<F<'d>>,
     ) -> Self {
         Self {
             regular: regular.into(),
@@ -140,8 +177,8 @@ pub unsafe fn render(
                 });
             };
         }
-        input!(|x| x.1 & Style::ITALIC == 0, fonts.regular);
-        input!(|x| x.1 & Style::ITALIC != 0, fonts.bold_italic); // bifont is an instance of ifont
+        input!(|x| x.1 & Style::ITALIC == 0, *fonts.regular);
+        input!(|x| x.1 & Style::ITALIC != 0, *fonts.italic);
 
         for (&cell, glyph) in
             characters.iter().map(|x| (&col[x.data as usize], x))
@@ -171,7 +208,8 @@ pub unsafe fn render(
             // }
             if let Some(_) = cell.letter {
                 let f = match cell.style.flags {
-                    f if f & (Style::BOLD | Style::ITALIC) != 0 =>
+                    f if (f & Style::BOLD != 0)
+                        & (f & Style::ITALIC != 0) =>
                         fonts.bold_italic,
                     f if f & Style::BOLD != 0 => fonts.bold,
                     f if f & Style::ITALIC != 0 => fonts.italic,
@@ -179,8 +217,8 @@ pub unsafe fn render(
                 };
                 let id = glyph.id;
                 let mut scbd = ScaleContext::new();
-                let mut scbd = scbd.builder(f);
-                scbd = scbd.size(ppem);
+                let scbd =
+                    scbd.builder(*f).variations(f.variations()).size(ppem);
 
                 let x = Render::new(&[Source::Outline])
                     .format(if subpixel {
