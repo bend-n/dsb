@@ -4,13 +4,16 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+array_chunks = "1.0.0"
 atools = "0.1.6"
 fimg = { path = "../fimg", features = ["real-show", "save"] }
 # fimg = { git = "https://github.com/bend-n/fimg" }
 implicit-fn = "0.1.0"
 lower = "0.2.0"
+lru-cache = "0.1.2"
 swash = "0.2.5"
 swizzle = "0.1.0"
+umath = "0.0.7"
 
 [[test]]
 name = "test"

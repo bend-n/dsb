@@ -1,6 +1,5 @@
 #![allow(incomplete_features)]
 #![feature(
-    array_chunks,
     super_let,
     debug_closure_helpers,
     const_trait_impl,
@@ -15,8 +14,10 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 use std::iter::{successors, zip};
 pub mod cell;
+use array_chunks::*;
 use atools::{ArrayTools, Join};
 use fimg::{Image, OverlayAt};
+use lru_cache::LruCache;
 use swash::scale::{Render, ScaleContext, Source};
 use swash::shape::ShapeContext;
 use swash::shape::cluster::Glyph;
@@ -24,15 +25,18 @@ use swash::text::cluster::{CharCluster, Parser, Token};
 use swash::text::{Codepoint, Script};
 use swash::zeno::Format;
 use swash::{FontRef, Instance};
+use umath::FF32;
 
 pub use crate::cell::Cell;
 use crate::cell::Style;
-
+#[derive(Clone)]
 pub struct Fonts<'a, 'b, 'c, 'd> {
     regular: F<'a>,
     bold: F<'b>,
     italic: F<'c>,
     bold_italic: F<'d>,
+
+    cache: LruCache<(u8, FF32, u16), swash::scale::image::Image>,
 }
 #[derive(Clone, Copy)]
 pub enum F<'a> {
@@ -83,6 +87,7 @@ impl<'a, 'b, 'c, 'd> Fonts<'a, 'b, 'c, 'd> {
             bold: bold.into(),
             italic: italic.into(),
             bold_italic: bold_italic.into(),
+            cache: LruCache::new(3000),
         }
     }
 }
@@ -92,7 +97,7 @@ pub unsafe fn render(
     (c, r): (usize, usize),
     ppem: f32,
     bgcolor: [u8; 3],
-    fonts: Fonts,
+    fonts: &mut Fonts,
     line_spacing: f32,
     subpixel: bool,
 ) -> Image<Box<[u8]>, 3> {
@@ -207,27 +212,34 @@ pub unsafe fn render(
             //     };
             // }
             if let Some(_) = cell.letter {
-                let f = match cell.style.flags {
+                let (key, f) = match cell.style.flags {
                     f if (f & Style::BOLD != 0)
                         & (f & Style::ITALIC != 0) =>
-                        fonts.bold_italic,
-                    f if f & Style::BOLD != 0 => fonts.bold,
-                    f if f & Style::ITALIC != 0 => fonts.italic,
-                    _ => fonts.regular,
+                        (3, fonts.bold_italic),
+                    f if f & Style::BOLD != 0 => (2, fonts.bold),
+                    f if f & Style::ITALIC != 0 => (1, fonts.italic),
+                    _ => (0, fonts.regular),
                 };
                 let id = glyph.id;
-                let mut scbd = ScaleContext::new();
-                let scbd =
-                    scbd.builder(*f).variations(f.variations()).size(ppem);
+                let key = (key, FF32::new(ppem), id);
 
-                let x = Render::new(&[Source::Outline])
-                    .format(if subpixel {
-                        Format::Subpixel
-                    } else {
-                        Format::Alpha
-                    })
-                    .render(&mut scbd.build(), id)
-                    .unwrap();
+                if !fonts.cache.contains_key(&key) {
+                    let mut scbd = ScaleContext::new();
+                    let scbd = scbd
+                        .builder(*f)
+                        .variations(f.variations())
+                        .size(ppem);
+                    let x = Render::new(&[Source::Outline])
+                        .format(if subpixel {
+                            Format::Subpixel
+                        } else {
+                            Format::Alpha
+                        })
+                        .render(&mut scbd.build(), id)
+                        .unwrap();
+                    fonts.cache.insert(key, x);
+                };
+                let x = fonts.cache.get_mut(&key).unwrap();
 
                 if x.placement.width == 0 {
                     continue;
@@ -249,8 +261,8 @@ pub unsafe fn render(
                         )
                         .buf(&x.data),
                         (x_, y_),
-                        color.map(_ as u32),
-                        cell.style.bg.map(_ as u32),
+                        color.map(_ as _),
+                        cell.style.bg.map(_ as _),
                     );
                 } else {
                     i.as_mut().blend_alpha_and_color_at(
