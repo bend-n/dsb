@@ -100,18 +100,19 @@ pub unsafe fn render(
     fonts: &mut Fonts,
     line_spacing: f32,
     subpixel: bool,
-) -> Image<Box<[u8]>, 3> {
+    mut i: Image<&mut [u8], 3>,
+) {
     assert_eq!(c * r, cells.len(), "cells too short.");
+
+    i.chunked_mut().for_each(|x| *x = bgcolor);
     let met = fonts.regular.metrics(&[]);
     let fac = ppem / met.units_per_em as f32;
-
     let (fw, fh_) = dims(&fonts.regular, ppem);
     let fh = fh_;
-    let (w, h) = (
-        (fw * c as f32).ceil() as u32,
-        height(&fonts.regular, ppem, line_spacing, r),
-    );
-    let mut i = Image::build(w as _, h as _).fill(bgcolor);
+    // let (w, h) = (
+    //     (fw * c as f32).ceil() as u32,
+    //     height(&fonts.regular, ppem, line_spacing, r),
+    // );
     for (col, k) in cells.chunks_exact(c as _).zip(0..) {
         for (&cell, j) in zip(col, 0..) {
             if cell.style.bg != bgcolor {
@@ -305,7 +306,6 @@ pub unsafe fn render(
     //         )
     //     };
     // }
-    i
 }
 
 #[implicit_fn::implicit_fn]
