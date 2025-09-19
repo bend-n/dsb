@@ -24,7 +24,7 @@ use swash::shape::cluster::Glyph;
 use swash::text::cluster::{CharCluster, Parser, Token};
 use swash::text::{Codepoint, Script};
 use swash::zeno::Format;
-use swash::{FontRef, Instance};
+use swash::{FontRef, Instance, Variation};
 use umath::FF32;
 
 pub use crate::cell::Cell;
@@ -40,12 +40,12 @@ pub struct Fonts<'a, 'b, 'c, 'd> {
 }
 #[derive(Clone, Copy)]
 pub enum F<'a> {
-    FontRef(FontRef<'a>),
+    FontRef(FontRef<'a>, &'static [(u32, f32)]),
     Instance(FontRef<'a>, Instance<'a>),
 }
 impl<'a, T: Into<FontRef<'a>>> From<T> for F<'a> {
     fn from(value: T) -> Self {
-        Self::FontRef(value.into())
+        Self::FontRef(value.into(), &[])
     }
 }
 
@@ -54,7 +54,7 @@ impl<'a> std::ops::Deref for F<'a> {
 
     fn deref(&self) -> &Self::Target {
         match self {
-            F::FontRef(font_ref) | F::Instance(font_ref, _) => font_ref,
+            F::FontRef(font_ref, _) | F::Instance(font_ref, _) => font_ref,
         }
     }
 }
@@ -64,7 +64,7 @@ impl<'a> F<'a> {
     }
     pub fn variations(&self) -> Box<dyn Iterator<Item = (u32, f32)> + 'a> {
         match self {
-            F::FontRef(_) => Box::new(std::iter::empty()),
+            F::FontRef(_, x) => Box::new(x.into_iter().copied()),
             F::Instance(font_ref, instance) => Box::new(
                 instance
                     .values()
@@ -118,7 +118,7 @@ pub unsafe fn render(
             if cell.style.bg != bgcolor {
                 let cell: Image<Box<[u8]>, 4> = Image::<_, 4>::build(
                     fw.ceil() as u32,
-                    fh_.floor() as u32,
+                    fh_.ceil() as u32,
                 )
                 .fill(cell.style.bg.join(255));
 
@@ -229,6 +229,7 @@ pub unsafe fn render(
                     let scbd = scbd
                         .builder(*f)
                         .variations(f.variations())
+                        .hint(true)
                         .size(ppem);
                     let x = Render::new(&[Source::Outline])
                         .format(if subpixel {
