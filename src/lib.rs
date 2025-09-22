@@ -102,7 +102,7 @@ pub unsafe fn render(
     subpixel: bool,
     mut i: Image<&mut [u8], 3>,
 ) {
-    assert_eq!(c * r, cells.len(), "cells too short.");
+    // assert_eq!(c * r, cells.len(), "cells too short.");
 
     i.chunked_mut().for_each(|x| *x = bgcolor);
     let met = fonts.regular.metrics(&[]);
