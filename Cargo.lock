@@ -33,6 +33,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a2b07991a9d33bc900bdc04191b44d888d55270986b82dd81325368a40bb23f"
 
 [[package]]
+name = "atools"
+version = "0.1.7"
+source = "git+https://github.com/bend-n/atools#9903f658a8f89098f059b2f50df7eebc353c61a7"
+
+[[package]]
 name = "autocfg"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -144,7 +149,7 @@ name = "dsb"
 version = "0.1.0"
 dependencies = [
  "array_chunks",
- "atools",
+ "atools 0.1.7 (git+https://github.com/bend-n/atools)",
  "fimg",
  "implicit-fn",
  "lower",
@@ -191,7 +196,7 @@ version = "0.4.48"
 source = "git+https://github.com/bend-n/fimg#86389b333ad51fe636afc9a2ca0f5829b4f8b962"
 dependencies = [
  "array_chunks",
- "atools",
+ "atools 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "car",
  "clipline",
  "fer",
@@ -614,7 +619,7 @@ version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebdf6119f17fb69ae8e79fef54f50c17f5760a4dd94013f5943b0731b6714bea"
 dependencies = [
- "atools",
+ "atools 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
