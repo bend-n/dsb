@@ -1,5 +1,6 @@
 #![allow(incomplete_features)]
 #![feature(
+    proc_macro_hygiene,
     super_let,
     debug_closure_helpers,
     const_trait_impl,
@@ -249,11 +250,11 @@ pub unsafe fn render(
 
                 let x_ = ((j as f32 * fw + glyph.x)
                     + x.placement.left as f32)
-                    .round() as u32;
+                    .round() as i32;
                 let y_ = (((k + 1) as f32 * fh) - (x.placement.top as f32))
-                    .round() as u32
-                    - (met.descent * fac).round() as u32
-                    + (k as f32 * line_spacing as f32 * fac) as u32;
+                    .round() as i32
+                    - (met.descent * fac).round() as i32
+                    + (k as f32 * line_spacing as f32 * fac) as i32;
                 if subpixel {
                     into(
                         i.as_mut(),
@@ -274,14 +275,8 @@ pub unsafe fn render(
                         )
                         .buf(&x.data),
                         color,
-                        ((j as f32 * fw + glyph.x)
-                            + x.placement.left as f32)
-                            .round() as u32,
-                        (((k + 1) as f32 * fh) - (x.placement.top as f32))
-                            .round() as u32
-                            - (met.descent * fac).round() as u32
-                            + (k as f32 * line_spacing as f32 * fac)
-                                as u32,
+                        x_ as u32,
+                        y_ as u32,
                     );
                 }
             }
@@ -331,7 +326,7 @@ fn blend(
 fn into(
     mut i: Image<&mut [u8], 3>,
     with: Image<&[u8], 4>,
-    (x_, y_): (u32, u32),
+    (x_, y_): (i32, i32),
     color: [u32; 3],
     bgcolor: [u32; 3],
 ) {
@@ -344,7 +339,7 @@ fn into(
         ))
         // could opt later
         .for_each(|((x, y), d)| {
-            i.get_pixel_mut(x + x_, y + y_).map(*_ = d);
+            i.get_pixel_mut(x.wrapping_add(x_ as u32), y.wrapping_add(y_ as u32)).map(*_ = d);
         })
 }
 
