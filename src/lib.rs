@@ -1,6 +1,8 @@
 #![allow(incomplete_features)]
 #![feature(
+    bigint_helper_methods,
     proc_macro_hygiene,
+    portable_simd,
     super_let,
     debug_closure_helpers,
     const_trait_impl,
@@ -15,7 +17,7 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 use std::iter::{successors, zip};
 pub mod cell;
-use atools::{ArrayTools, Deconstruct_, Join};
+use atools::{Deconstruct_, Join};
 use fimg::{Image, OverlayAt};
 use lru_cache::LruCache;
 use swash::scale::{Render, ScaleContext, Source};
@@ -303,14 +305,17 @@ pub unsafe fn render(
 }
 
 #[implicit_fn::implicit_fn]
-fn blend(m: [u32; 3], c: [u32; 3], to: &mut [u8; 3]) {
-    use atools::pervasive::prelude::*;
-    let mask = m.rev();
-    *to = c
-        .amul(mask)
-        .aadd(256.sub(mask).amul(to.map(_ as u32)))
-        .div(256)
-        .map(_ as u8);
+#[lower::apply(wrapping)]
+fn blend(m: [u8; 3], c: [u8; 3], to: &mut [u8; 3]) {
+    // c.wrapping_sub(t).widening_mul(m).1.wrapping_add(t)
+    *to = [
+        ((((c[0] - to[0]) as u32) * m[2] as u32 >> 8) + to[0] as u32)
+            as u8,
+        ((((c[1] - to[1]) as u32) * m[1] as u32 >> 8) + to[1] as u32)
+            as u8,
+        ((((c[2] - to[2]) as u32) * m[0] as u32 >> 8) + to[2] as u32)
+            as u8,
+    ];
 }
 
 #[implicit_fn::implicit_fn]
@@ -319,7 +324,7 @@ fn into(
     mut i: Image<&mut [u8], 3>,
     with: Image<&[u8], 4>,
     (x_, y_): (i32, i32),
-    color: [u32; 3],
+    color: [u8; 3],
 ) {
     (0..with.height())
         .flat_map(|y| (0..with.width()).map(move |x| (x, y)))
@@ -330,7 +335,7 @@ fn into(
                 y.wrapping_add(y_ as u32),
             )
             .map(|x| {
-                let mask = d.init().map(_ as u32);
+                let mask = d.init();
                 blend(mask, color, x);
             });
         })
