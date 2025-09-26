@@ -304,17 +304,14 @@ pub unsafe fn render(
     // }
 }
 
-#[implicit_fn::implicit_fn]
-#[lower::apply(wrapping)]
 fn blend(m: [u8; 3], c: [u8; 3], to: &mut [u8; 3]) {
-    // c.wrapping_sub(t).widening_mul(m).1.wrapping_add(t)
     *to = [
-        ((((c[0] - to[0]) as u32) * m[2] as u32 >> 8) + to[0] as u32)
-            as u8,
-        ((((c[1] - to[1]) as u32) * m[1] as u32 >> 8) + to[1] as u32)
-            as u8,
-        ((((c[2] - to[2]) as u32) * m[0] as u32 >> 8) + to[2] as u32)
-            as u8,
+        ((c[0] as u16 * m[2] as u16 + (255 - m[2] as u16) * to[0] as u16)
+            / 255) as u8,
+        ((c[1] as u16 * m[1] as u16 + (255 - m[1] as u16) * to[1] as u16)
+            / 255) as u8,
+        ((c[2] as u16 * m[0] as u16 + (255 - m[0] as u16) * to[2] as u16)
+            / 255) as u8,
     ];
 }
 
