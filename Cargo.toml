@@ -11,6 +11,7 @@ fimg = { git = "https://github.com/bend-n/fimg", features = [
     "real-show",
 ] }
 implicit-fn = "0.1.0"
+itertools = "0.14.0"
 lower = "0.2.0"
 lru-cache = "0.1.2"
 swash = "0.2.5"

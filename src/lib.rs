@@ -19,6 +19,7 @@ use std::iter::{successors, zip};
 pub mod cell;
 use atools::{Deconstruct_, Join};
 use fimg::{Image, OverlayAt};
+use itertools::Itertools;
 use lru_cache::LruCache;
 use swash::scale::{Render, ScaleContext, Source};
 use swash::shape::ShapeContext;
@@ -31,7 +32,6 @@ use umath::FF32;
 
 pub use crate::cell::Cell;
 use crate::cell::Style;
-#[derive(Clone)]
 pub struct Fonts<'a, 'b, 'c, 'd> {
     regular: F<'a>,
     bold: F<'b>,
@@ -39,6 +39,7 @@ pub struct Fonts<'a, 'b, 'c, 'd> {
     bold_italic: F<'d>,
 
     cache: LruCache<(u8, FF32, u16), swash::scale::image::Image>,
+    scx: ShapeContext,
 }
 #[derive(Clone, Copy)]
 pub enum F<'a> {
@@ -90,6 +91,7 @@ impl<'a, 'b, 'c, 'd> Fonts<'a, 'b, 'c, 'd> {
             italic: italic.into(),
             bold_italic: bold_italic.into(),
             cache: LruCache::new(3000),
+            scx: ShapeContext::new(),
         }
     }
 }
@@ -151,38 +153,41 @@ pub unsafe fn render(
                 cell.style.flags,
             )
         });
-
+        let scx = &mut fonts.scx;
+        let mut cluster = CharCluster::new();
         macro_rules! input {
             ($rule:expr, $font:expr) => {
-                let mut scx = ShapeContext::new();
-                let mut shaper = scx
-                    .builder($font)
-                    .size(ppem)
-                    .script(Script::Latin)
-                    .features([
-                        ("ss19", 1),
-                        ("ss01", 1),
-                        ("ss20", 1),
-                        ("liga", 1),
-                        ("rlig", 1),
-                    ])
-                    .build();
-
-                let mut cluster = CharCluster::new();
-
-                let mut parser = Parser::new(
-                    Script::Latin,
-                    tokenized.clone().filter($rule).map(|x| x.0),
-                );
-                while parser.next(&mut cluster) {
-                    cluster.map(|ch| $font.charmap().map(ch));
-                    shaper.add_cluster(&cluster);
-                }
-                shaper.shape_with(|x| {
-                    x.glyphs.into_iter().for_each(|x| {
-                        characters[x.data as usize] = *x;
-                    })
-                });
+                tokenized
+                    .clone()
+                    .chunk_by($rule)
+                    .into_iter()
+                    .filter(|x| x.0)
+                    .for_each(|(_, y)| {
+                        let x = y.map(|x| x.0).collect::<Vec<_>>();
+                        let mut shaper = scx
+                            .builder($font)
+                            .size(ppem)
+                            .script(Script::Latin)
+                            .features([
+                                ("ss19", 1),
+                                ("ss01", 1),
+                                ("ss20", 1),
+                                ("liga", 1),
+                                ("rlig", 1),
+                            ])
+                            .build();
+                        let mut parser =
+                            Parser::new(Script::Latin, x.into_iter());
+                        while parser.next(&mut cluster) {
+                            cluster.map(|ch| $font.charmap().map(ch));
+                            shaper.add_cluster(&cluster);
+                        }
+                        shaper.shape_with(|x| {
+                            x.glyphs.into_iter().for_each(|x| {
+                                characters[x.data as usize] = *x;
+                            })
+                        });
+                    });
             };
         }
         input!(|x| x.1 & Style::ITALIC == 0, *fonts.regular);
@@ -392,16 +397,52 @@ fn x() {
         });
     let mut i = Image::alloc(4000, 1000);
     unsafe {
+        let z = [
+            Cell {
+                style: Style {
+                    bg: [31, 36, 48],
+                    color: [255, 255, 255],
+                    flags: 5,
+                },
+                letter: Some('['),
+            },
+            Cell {
+                style: Style {
+                    bg: [31, 36, 48],
+                    color: [255, 173, 102],
+                    flags: 5,
+                },
+                letter: Some('='),
+            },
+            Cell {
+                style: Style {
+                    bg: [31, 36, 48],
+                    color: [204, 202, 194],
+                    flags: 0,
+                },
+                letter: Some('s'),
+            },
+            Cell {
+                style: Style {
+                    bg: [31, 36, 48],
+                    color: [255, 173, 102],
+                    flags: 5,
+                },
+                letter: Some('>'),
+            },
+            Cell {
+                style: Style {
+                    bg: [31, 36, 48],
+                    color: [255, 255, 255],
+                    flags: 5,
+                },
+                letter: Some(']'),
+            },
+        ];
         render(
-            &[
-                Cell::basic('='),
-                Cell::basic('='),
-                Cell::basic('='),
-                Cell::basic('='),
-                Cell::basic('='),
-            ],
+            &z,
             (5, 0),
-            800.0,
+            200.0,
             [0; 3],
             &mut Fonts::new(*FONT, *FONT, *FONT, *FONT),
             2.0,
