@@ -3,10 +3,11 @@ use std::time::Instant;
 
 use dsb::Fonts;
 use dsb::cell::Style;
+use fimg::Image;
 use swash::FontRef;
 
 fn main() {
-    let ppem = 40.0;
+    let ppem = 15.0;
     let lh = 200.0;
     // let (fw, fh) = dsb::dims(&FONT, ppem);
     let (w, h) = (2160, 1440);
@@ -29,20 +30,21 @@ fn main() {
         })
         .collect::<Vec<_>>();
     let now = Instant::now();
-    let x = unsafe {
+    let mut x = Image::alloc(w as _, h as _);
+    unsafe {
         dsb::render(
             &cells,
             (c, r),
             ppem,
             [255; 3],
-            Fonts::new(*FONT, *FONT, *FONT, *FONT),
+            &mut Fonts::new(*FONT, *FONT, *FONT, *FONT),
             lh,
+            true,
+            x.as_mut(),
         )
     };
     println!("{:?}", now.elapsed());
     x.as_ref().show();
-    assert!(x.height() < h as u32);
-    dbg!(x.width(), x.height());
 }
 pub static FONT: LazyLock<FontRef<'static>> = LazyLock::new(|| {
     FontRef::from_index(
