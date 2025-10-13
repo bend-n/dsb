@@ -18,6 +18,7 @@ impl Default for Style {
 
 use std::default::Default::default;
 use std::fmt::Debug;
+use std::ops::BitOrAssign;
 impl Style {
     pub const BOLD: u8 = 1;
     pub const DIM: u8 = 1 << 1;
@@ -33,6 +34,12 @@ pub struct Cell {
 impl Debug for Cell {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.letter.unwrap_or(' '))
+    }
+}
+impl BitOrAssign<(u8, [u8; 3])> for Style {
+    fn bitor_assign(&mut self, (f, c): (u8, [u8; 3])) {
+        self.flags |= f;
+        self.color = c;
     }
 }
 impl Cell {
