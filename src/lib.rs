@@ -33,10 +33,10 @@ use umath::FF32;
 pub use crate::cell::Cell;
 use crate::cell::Style;
 pub struct Fonts<'a, 'b, 'c, 'd> {
-    regular: F<'a>,
-    bold: F<'b>,
-    italic: F<'c>,
-    bold_italic: F<'d>,
+    pub regular: F<'a>,
+    pub bold: F<'b>,
+    pub italic: F<'c>,
+    pub bold_italic: F<'d>,
 
     cache: LruCache<(u8, FF32, u16), swash::scale::image::Image>,
     scx: ShapeContext,
