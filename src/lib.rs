@@ -105,6 +105,7 @@ pub unsafe fn render(
     line_spacing: f32,
     subpixel: bool,
     mut i: Image<&mut [u8], 3>,
+    (offset_x, offset_y): (u32, u32),
 ) {
     // assert_eq!(c * r, cells.len(), "cells too short.");
 
@@ -129,9 +130,11 @@ pub unsafe fn render(
                 unsafe {
                     i.as_mut().overlay_at(
                         &cell,
-                        (j as f32 * fw).floor() as u32,
+                        (j as f32 * fw).floor() as u32 // _
+                            + offset_x,
                         (k as f32 * (fh + line_spacing * fac)).floor()
-                            as u32,
+                            as u32
+                            + offset_y,
                     )
                 };
             }
@@ -254,11 +257,15 @@ pub unsafe fn render(
                 // println!("{:?} {:?}", glyph, x.placement);
                 let x_ = ((j as f32 * fw + glyph.x + 0.125)
                     + x.placement.left as f32)
-                    .round() as i32;
-                let y_ = (((k + 1) as f32 * fh) - (x.placement.top as f32))
+                    .round() as u32
+                    + offset_x;
+                let y_ = ((((k + 1) as f32 * fh)
+                    - (x.placement.top as f32))
                     .round() as i32
                     - (met.descent * fac).round() as i32
-                    + (k as f32 * line_spacing as f32 * fac) as i32;
+                    + (k as f32 * line_spacing as f32 * fac) as i32)
+                    as u32
+                    + offset_y;
                 if subpixel {
                     into(
                         i.as_mut(),
@@ -325,21 +332,19 @@ fn blend(m: [u8; 3], c: [u8; 3], to: &mut [u8; 3]) {
 fn into(
     mut i: Image<&mut [u8], 3>,
     with: Image<&[u8], 4>,
-    (x_, y_): (i32, i32),
+    (x_, y_): (u32, u32),
     color: [u8; 3],
 ) {
     (0..with.height())
         .flat_map(|y| (0..with.width()).map(move |x| (x, y)))
         .zip(with.chunked())
         .for_each(|((x, y), d)| {
-            i.get_pixel_mut(
-                x.wrapping_add(x_ as u32),
-                y.wrapping_add(y_ as u32),
-            )
-            .map(|x| {
-                let mask = d.init();
-                blend(mask, color, x);
-            });
+            i.get_pixel_mut(x.wrapping_add(x_), y.wrapping_add(y_)).map(
+                |x| {
+                    let mask = d.init();
+                    blend(mask, color, x);
+                },
+            );
         })
 }
 
@@ -450,6 +455,7 @@ fn x() {
             2.0,
             true,
             i.as_mut(),
+            (20, 20),
         );
     }
     i.show();
