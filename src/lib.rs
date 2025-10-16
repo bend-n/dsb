@@ -109,7 +109,6 @@ pub unsafe fn render(
 ) {
     // assert_eq!(c * r, cells.len(), "cells too short.");
 
-    i.chunked_mut().for_each(|x| *x = bgcolor);
     let met = fonts.regular.metrics(&[]);
     let fac = ppem / met.units_per_em as f32;
     let (fw, fh_) = dims(&fonts.regular, ppem);
