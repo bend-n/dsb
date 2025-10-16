@@ -363,18 +363,20 @@ pub fn fit(
     )
 }
 
-fn height(
+pub fn size(
     font: &FontRef,
     ppem: f32,
     line_spacing: f32,
-    rows: usize,
-) -> usize {
-    let m = font.metrics(&[]);
-    let f = ppem / m.units_per_em as f32;
+    (c, r): (usize, usize),
+) -> (usize, usize) {
+    let (fw, fh) = dims(font, ppem);
 
-    let ls = line_spacing * f;
-    let (_, fh) = dims(font, ppem);
-    (((fh + ls) * rows as f32).ceil() - ls) as usize
+    ((fw * c as f32).ceil() as usize, {
+        let m = font.metrics(&[]);
+        let f = ppem / m.units_per_em as f32;
+        let ls = line_spacing * f;
+        (((fh + ls) * r as f32).ceil() - ls) as usize
+    })
 }
 
 pub fn dims(font: &FontRef, ppem: f32) -> (f32, f32) {
