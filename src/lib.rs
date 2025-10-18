@@ -100,7 +100,6 @@ pub unsafe fn render(
     cells: &[Cell],
     (c, r): (usize, usize),
     ppem: f32,
-    bgcolor: [u8; 3],
     fonts: &mut Fonts,
     line_spacing: f32,
     subpixel: bool,
@@ -119,24 +118,19 @@ pub unsafe fn render(
     // );
     for (col, k) in cells.chunks_exact(c as _).zip(0..) {
         for (&cell, j) in zip(col, 0..) {
-            if cell.style.bg != bgcolor {
-                let cell: Image<Box<[u8]>, 4> = Image::<_, 4>::build(
-                    fw.ceil() as u32,
-                    fh_.ceil() as u32,
-                )
-                .fill(cell.style.bg.join(255));
+            let cell: Image<Box<[u8]>, 4> =
+                Image::<_, 4>::build(fw.ceil() as u32, fh_.ceil() as u32)
+                    .fill(cell.style.bg.join(255));
 
-                unsafe {
-                    i.as_mut().overlay_at(
-                        &cell,
-                        (j as f32 * fw).floor() as u32 // _
+            unsafe {
+                i.as_mut().overlay_at(
+                    &cell,
+                    (j as f32 * fw).floor() as u32 // _
                             + offset_x,
-                        (k as f32 * (fh + line_spacing * fac)).floor()
-                            as u32
-                            + offset_y,
-                    )
-                };
-            }
+                    (k as f32 * (fh + line_spacing * fac)).floor() as u32
+                        + offset_y,
+                )
+            };
         }
     }
     let mut characters: Vec<Glyph> = vec![Glyph::default(); c];
@@ -449,7 +443,6 @@ fn x() {
             &z,
             (5, 0),
             200.0,
-            [0; 3],
             &mut Fonts::new(*FONT, *FONT, *FONT, *FONT),
             2.0,
             true,
