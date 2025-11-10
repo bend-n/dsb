@@ -118,12 +118,12 @@ pub unsafe fn render(
     // );
     for (col, k) in cells.chunks_exact(c as _).zip(0..) {
         for (&cell, j) in zip(col, 0..) {
-            let cell: Image<Box<[u8]>, 4> =
-                Image::<_, 4>::build(fw.ceil() as u32, fh_.ceil() as u32)
-                    .fill(cell.style.bg.join(255));
-
+            let cell: Image<Box<[u8]>, 3> =
+                Image::<_, 3>::build(fw.ceil() as u32, fh_.ceil() as u32)
+                    .fill(cell.style.bg);
+            use fimg::OverlayAtClipping;
             unsafe {
-                i.as_mut().overlay_at(
+                i.as_mut().clipping_overlay_at(
                     &cell,
                     (j as f32 * fw).floor() as u32 // _
                             + offset_x,

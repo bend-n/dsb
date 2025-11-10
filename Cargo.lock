@@ -200,7 +200,6 @@ checksum = "6a02dba6a60cd31533cf16561ced53239686d18f1464bff49579dd320fcea081"
 [[package]]
 name = "fimg"
 version = "0.4.50"
-source = "git+https://github.com/bend-n/fimg#4cf4670c93a27f30bfdd96929623fe14d187bbf0"
 dependencies = [
  "array_chunks",
  "atools 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
