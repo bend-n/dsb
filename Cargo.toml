@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 array_chunks = "1.0.0"
 atools = { git = "https://github.com/bend-n/atools", version = "0.1.7" }
-fimg = { path = "../fimg", features = ["save", "real-show"] }
+fimg = { git = "https://github.com/bend-n/fimg", features = ["save", "real-show"] }
 implicit-fn = "0.1.0"
 itertools = "0.14.0"
 lower = "0.2.0"
