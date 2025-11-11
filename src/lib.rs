@@ -95,6 +95,28 @@ impl<'a, 'b, 'c, 'd> Fonts<'a, 'b, 'c, 'd> {
         }
     }
 }
+pub unsafe fn render_owned(
+    cells: &[Cell],
+    (c, r): (usize, usize),
+    ppem: f32,
+    fonts: &mut Fonts,
+    line_spacing: f32,
+    subpixel: bool,
+) -> Image<Box<[u8]>, 3> {
+    let (w, h) = size(&fonts.regular, ppem, line_spacing, (c, r));
+    let mut i = Image::build(w as _, h as _).fill([255; 3]);
+    render(
+        cells,
+        (c, r),
+        ppem,
+        fonts,
+        line_spacing,
+        subpixel,
+        i.as_mut(),
+        (0, 0),
+    );
+    i
+}
 #[implicit_fn::implicit_fn]
 pub unsafe fn render(
     cells: &[Cell],
@@ -395,7 +417,7 @@ fn x() {
             )
             .unwrap()
         });
-    let mut i = Image::alloc(4000, 1000);
+
     unsafe {
         let z = [
             Cell {
@@ -439,16 +461,14 @@ fn x() {
                 letter: Some(']'),
             },
         ];
-        render(
+        render_owned(
             &z,
-            (5, 0),
+            (5, 1),
             200.0,
             &mut Fonts::new(*FONT, *FONT, *FONT, *FONT),
             2.0,
             true,
-            i.as_mut(),
-            (20, 20),
-        );
+        )
+        .show();
     }
-    i.show();
 }
