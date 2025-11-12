@@ -8,7 +8,7 @@ use swash::FontRef;
 
 fn main() {
     let ppem = 15.0;
-    let lh = 200.0;
+    let lh = -400.0;
     // let (fw, fh) = dsb::dims(&FONT, ppem);
     let (w, h) = (2160, 1440);
     dbg!(w, h);
@@ -30,17 +30,15 @@ fn main() {
         })
         .collect::<Vec<_>>();
     let now = Instant::now();
-    let mut x = Image::alloc(w as _, h as _);
-    unsafe {
-        dsb::render(
+
+    let x = unsafe {
+        dsb::render_owned(
             &cells,
             (c, r),
             ppem,
-            [255; 3],
             &mut Fonts::new(*FONT, *FONT, *FONT, *FONT),
             lh,
             true,
-            x.as_mut(),
         )
     };
     println!("{:?}", now.elapsed());
