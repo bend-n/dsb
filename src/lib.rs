@@ -270,17 +270,18 @@ pub unsafe fn render(
                     continue;
                 }
                 // println!("{:?} {:?}", glyph, x.placement);
-                let x_ = ((j as f32 * fw + glyph.x + 0.125)
+                let x_ = (((j as f32 * fw + glyph.x + 0.125)
                     + x.placement.left as f32)
-                    .round() as u32
-                    + offset_x;
-                let y_ = ((((k + 1) as f32 * fh)
+                    .round() as i32
+                    + offset_x as i32)
+                    .max(0) as u32;
+                let y_ = (((((k + 1) as f32 * fh)
                     - (x.placement.top as f32))
                     .round() as i32
                     - (met.descent * fac).round() as i32
                     + (k as f32 * line_spacing as f32 * fac) as i32)
-                    as u32
-                    + offset_y;
+                    + offset_y as i32)
+                    .max(0) as u32;
                 if subpixel {
                     into(
                         i.as_mut(),
