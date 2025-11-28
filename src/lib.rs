@@ -218,15 +218,23 @@ pub unsafe fn render(
             if (cell.style.flags & Style::DIM) != 0 {
                 color = color.map(|x| x / 2);
             }
-            // if (cell.style.flags & Style::UNDERLINE) != 0 {
-            //     unsafe {
-            //         i.as_mut().overlay_at(
-            //             &Image::<_, 4>::build(fw.ceil() as u32, 2).fill(color.join(255)),
-            //             4 + (j as f32 * fw as u32,
-            //             (k as f32 * (ppem * 1.25)) as u32 + 5,
-            //         )
-            //     };
-            // }
+            if (cell.style.flags & Style::UNDERLINE) != 0 {
+                unsafe {
+                    i.as_mut().overlay_at(
+                        &Image::<_, 4>::build(
+                            fw.ceil() as u32,
+                            ((0.05 * ppem) as u32).max(1),
+                        )
+                        .fill(color.join(255)),
+                        ((j as f32 * fw).round() as i32 + offset_x as i32)
+                            .max(0) as u32,
+                        (k as f32 * (fh + line_spacing * fac)
+                            + (met.ascent * fac * 1.05))
+                            .floor() as u32
+                            + offset_y,
+                    )
+                };
+            }
             // if (cell.style.flags & Style::STRIKETHROUGH) != 0 {
             //     unsafe {
             //         i.as_mut().overlay_at(
@@ -425,7 +433,7 @@ fn x() {
                 style: Style {
                     bg: [31, 36, 48],
                     color: [255, 255, 255],
-                    flags: 5,
+                    flags: Style::UNDERLINE,
                 },
                 letter: Some('['),
             },
@@ -433,7 +441,7 @@ fn x() {
                 style: Style {
                     bg: [31, 36, 48],
                     color: [255, 173, 102],
-                    flags: 5,
+                    flags: Style::UNDERLINE,
                 },
                 letter: Some('='),
             },
@@ -441,7 +449,7 @@ fn x() {
                 style: Style {
                     bg: [31, 36, 48],
                     color: [204, 202, 194],
-                    flags: 0,
+                    flags: Style::UNDERLINE,
                 },
                 letter: Some('s'),
             },
@@ -449,7 +457,7 @@ fn x() {
                 style: Style {
                     bg: [31, 36, 48],
                     color: [255, 173, 102],
-                    flags: 5,
+                    flags: Style::UNDERLINE,
                 },
                 letter: Some('>'),
             },
@@ -465,7 +473,7 @@ fn x() {
         render_owned(
             &z,
             (5, 1),
-            200.0,
+            20.0,
             &mut Fonts::new(*FONT, *FONT, *FONT, *FONT),
             2.0,
             true,
