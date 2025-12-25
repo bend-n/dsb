@@ -5,6 +5,12 @@ pub struct Style {
     // one of [Style::BOLD]..
     pub flags: u8,
 }
+impl Hash for Cell {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.style.flags.hash(state);
+        self.letter.hash(state);
+    }
+}
 impl Style {
     pub fn basic(self, c: char) -> Cell {
         Cell {
@@ -32,6 +38,7 @@ impl Default for Style {
 
 use std::default::Default::default;
 use std::fmt::Debug;
+use std::hash::Hash;
 use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign};
 impl Style {
     pub const BOLD: u8 = 1;

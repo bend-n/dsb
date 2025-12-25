@@ -39,7 +39,7 @@ pub struct Fonts<'a, 'b, 'c, 'd> {
     pub bold_italic: F<'d>,
 
     cache: LruCache<(u8, FF32, u16), swash::scale::image::Image>,
-    shape_cache: LruCache<(u8, FF32, String), (u16, Vec<(u16, f32)>)>,
+    shape_cache: LruCache<Vec<Cell>, Vec<(u16, f32)>>,
     scx: ShapeContext,
 }
 #[derive(Clone, Copy)]
@@ -203,11 +203,6 @@ pub unsafe fn render(
                     .filter(|x| x.0)
                     .for_each(|(_, y)| {
                         let x = y.map(|x| x.0).collect::<Vec<_>>();
-                        let key = (
-                            $k,
-                            FF32::new(ppem),
-                            x.iter().map(|x| x.ch).collect::<String>(),
-                        );
                         /*if let Some((s, d)) = sch.get_mut(&key) {
                             for (a, b) in d
                                 .iter()
@@ -250,12 +245,18 @@ pub unsafe fn render(
                                 characters[x.data as usize] = (x.id, x.x);
                             })
                         });
-                        sch.insert(key.clone(), (s.unwrap() as _, l));
+                        
                     });
             };
         }
-        input!(|x| x.1 & Style::ITALIC == 0, *fonts.regular, 0);
-        input!(|x| x.1 & Style::ITALIC != 0, *fonts.italic, 1);
+        let characters = if let Some(x) = fonts.shape_cache.get_mut(col) {
+            &*x
+        } else {
+            input!(|x| x.1 & Style::ITALIC == 0, *fonts.regular, 0);
+            input!(|x| x.1 & Style::ITALIC != 0, *fonts.italic, 1);
+            fonts.shape_cache.insert(col.to_vec(), characters.clone());
+            &characters
+        };
         for (&cell, id, glyx, j) in characters
             .iter()
             .zip(0..)
