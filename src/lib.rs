@@ -39,6 +39,7 @@ pub struct Fonts<'a, 'b, 'c, 'd> {
     pub bold_italic: F<'d>,
 
     cache: LruCache<(u8, FF32, u16), swash::scale::image::Image>,
+    shape_cache: LruCache<(u8, FF32, String), (u16, Vec<(u16, f32)>)>,
     scx: ShapeContext,
 }
 #[derive(Clone, Copy)]
@@ -91,6 +92,7 @@ impl<'a, 'b, 'c, 'd> Fonts<'a, 'b, 'c, 'd> {
             italic: italic.into(),
             bold_italic: bold_italic.into(),
             cache: LruCache::new(3000),
+            shape_cache: LruCache::new(2000),
             scx: ShapeContext::new(),
         }
     }
@@ -173,7 +175,7 @@ pub unsafe fn render(
             };
         }
     }
-    let mut characters: Vec<Glyph> = vec![Glyph::default(); c];
+    let mut characters: Vec<(u16, f32)> = vec![(0, 0.); c];
 
     for (col, k) in cells.chunks_exact(c as _).zip(0..) {
         let tokenized = col.iter().enumerate().map(|(i, cell)| {
@@ -190,9 +192,10 @@ pub unsafe fn render(
             )
         });
         let scx = &mut fonts.scx;
+        let sch = &mut fonts.shape_cache;
         let mut cluster = CharCluster::new();
         macro_rules! input {
-            ($rule:expr, $font:expr) => {
+            ($rule:expr, $font:expr, $k: literal) => {
                 tokenized
                     .clone()
                     .chunk_by($rule)
@@ -200,6 +203,21 @@ pub unsafe fn render(
                     .filter(|x| x.0)
                     .for_each(|(_, y)| {
                         let x = y.map(|x| x.0).collect::<Vec<_>>();
+                        let key = (
+                            $k,
+                            FF32::new(ppem),
+                            x.iter().map(|x| x.ch).collect::<String>(),
+                        );
+                        /*if let Some((s, d)) = sch.get_mut(&key) {
+                            for (a, b) in d
+                                .iter()
+                                .zip(&mut characters[*s as usize..])
+                            {
+                                //characters[*c as usize] = (*a, *b);
+                                *b = *a;
+                            }
+                            return;
+                        }*/
                         let mut shaper = scx
                             .builder($font)
                             .size(ppem)
@@ -218,20 +236,31 @@ pub unsafe fn render(
                             cluster.map(|ch| $font.charmap().map(ch));
                             shaper.add_cluster(&cluster);
                         }
+                        let mut s = None;
+                        let mut l = vec![];
                         shaper.shape_with(|x| {
+                            s = s.or(Some(x.glyphs[0].data));
+                            l.extend(
+                                x.glyphs.into_iter().map(|x| (x.id, x.x)),
+                            );
+
+                            // println!("-");
                             x.glyphs.into_iter().for_each(|x| {
-                                characters[x.data as usize] = *x;
+                                // dbg!(x.data);
+                                characters[x.data as usize] = (x.id, x.x);
                             })
                         });
+                        sch.insert(key.clone(), (s.unwrap() as _, l));
                     });
             };
         }
-        input!(|x| x.1 & Style::ITALIC == 0, *fonts.regular);
-        input!(|x| x.1 & Style::ITALIC != 0, *fonts.italic);
-        for (&cell, glyph) in
-            characters.iter().map(|x| (&col[x.data as usize], x))
+        input!(|x| x.1 & Style::ITALIC == 0, *fonts.regular, 0);
+        input!(|x| x.1 & Style::ITALIC != 0, *fonts.italic, 1);
+        for (&cell, id, glyx, j) in characters
+            .iter()
+            .zip(0..)
+            .map(|(&(id, x), index)| (&col[index], id, x, index))
         {
-            let j = glyph.data as usize;
             let mut color = cell.style.color;
             if (cell.style.flags & Style::DIM) != 0 {
                 color = color.map(|x| x / 2);
@@ -271,7 +300,7 @@ pub unsafe fn render(
                     f if f & Style::ITALIC != 0 => (1, fonts.italic),
                     _ => (0, fonts.regular),
                 };
-                let id = glyph.id;
+
                 let key = (key, FF32::new(ppem), id);
                 if !fonts.cache.contains_key(&key) {
                     let mut scbd = ScaleContext::new();
@@ -296,7 +325,7 @@ pub unsafe fn render(
                     continue;
                 }
                 // println!("{:?} {:?}", glyph, x.placement);
-                let x_ = (((j as f32 * fw + glyph.x + 0.125)
+                let x_ = (((j as f32 * fw + glyx + 0.125)
                     + x.placement.left as f32)
                     .round() as i32
                     + offset_x as i32)
@@ -438,7 +467,7 @@ pub unsafe fn fill_in(
     }
     let from = y1 * iw + x1;
     let p = image.buffer_mut().as_mut_ptr();
-    let n = w as usize *3;
+    let n = w as usize * 3;
     let from = p.add(from as usize * 3);
 
     for y in y1 + 1..(y1 + h).min(image.height()) {
@@ -509,14 +538,8 @@ fn x() {
                 letter: Some(']'),
             },
         ];
-        render_owned(
-            &z,
-            (5, 1),
-            20.0,
-            &mut Fonts::new(*FONT, *FONT, *FONT, *FONT),
-            2.0,
-            true,
-        )
-        .show();
+        let mut f = Fonts::new(*FONT, *FONT, *FONT, *FONT);
+        render_owned(&z, (5, 1), 20.0, &mut f, 2.0, true);
+        render_owned(&z, (5, 1), 20.0, &mut f, 2.0, true).show();
     }
 }
