@@ -140,15 +140,29 @@ pub unsafe fn render(
     // );
     for (col, k) in cells.chunks_exact(c as _).zip(0..) {
         for (&cell, j) in zip(col, 0..) {
-            // let cell: Image<Box<[u8]>, 3> =
-                Image::<_, 3>::build(fw.ceil() as u32, fh_.ceil() as u32)
-                    .fill(cell.style.bg);
-            use fimg::OverlayAtClipping;
             unsafe {
-                i.as_mut().filled_box(((j as f32 * fw).floor() as u32 // _
+                /*i.as_mut().filled_box(
+                     (
+                        (j as f32 * fw).floor() as u32 // _
                             + offset_x,
-                    (k as f32 * (fh + line_spacing * fac)).floor() as u32
-                        + offset_y,), fw.ceil() as _, fh_.ceil() as _, cell.style.bg);
+                        (k as f32 * (fh + line_spacing * fac)).ceil() as u32 + offset_y
+                    ),
+                    fw.floor() as _, fh_.ceil() as _, cell.style.bg,
+                );*/
+
+                fill_in(
+                    i.as_mut(),
+                    (
+                        (j as f32 * fw).floor() as u32 // _
+                            + offset_x,
+                        (k as f32 * (fh + line_spacing * fac)).ceil()
+                            as u32
+                            + offset_y,
+                    ),
+                    (fw.ceil() as _, fh_.ceil() as _),
+                    cell.style.bg,
+                );
+
                 /*i.as_mut().clipping_overlay_at(
                     &cell,
                     (j as f32 * fw).floor() as u32 // _
@@ -411,6 +425,27 @@ pub fn size(
         (((fh + ls) * r as f32).ceil() - ls) as usize
     })
 }
+#[unsafe(no_mangle)]
+pub unsafe fn fill_in(
+    mut image: Image<&mut [u8], 3>,
+    (x1, y1): (u32, u32),
+    (w, h): (u32, u32),
+    with: [u8; 3],
+) {
+    let iw = image.width();
+    for x in x1..1 + w + x1 {
+        image.set_pixel(x, y1, with);
+    }
+    let from = y1 * iw + x1;
+    let p = image.buffer_mut().as_mut_ptr();
+    let n = w as usize *3;
+    let from = p.add(from as usize * 3);
+
+    for y in y1 + 1..(y1 + h).min(image.height()) {
+        core::ptr::copy(from, p.add(((y * iw + x1) * 3) as _), n);
+        // image.buffer_mut().copy_within(from.clone(), ((y * iw + x1)*3) as _);
+    }
+}
 
 pub fn dims(font: &FontRef, ppem: f32) -> (f32, f32) {
     let m = font.metrics(&[]);
@@ -425,7 +460,7 @@ fn x() {
     pub static FONT: std::sync::LazyLock<FontRef<'static>> =
         std::sync::LazyLock::new(|| {
             FontRef::from_index(
-                &include_bytes!("/home/os/CascadiaCodeNF.ttf")[..],
+                &include_bytes!("../../CascadiaCodeNF.ttf")[..],
                 0,
             )
             .unwrap()
