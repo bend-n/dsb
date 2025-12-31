@@ -155,7 +155,7 @@ pub unsafe fn render(
                 fill_in(
                     i.as_mut(),
                     (
-                        (j as f32 * fw).ceil() as u32 // _
+                        (j as f32 * fw).floor() as u32 // _
                             + offset_x,
                         (k as f32 * (fh + line_spacing * fac)).ceil()
                             as u32
@@ -245,6 +245,7 @@ pub unsafe fn render(
                                 characters[x.data as usize] = (x.id, x.x);
                             })
                         });
+                        
                     });
             };
         }
@@ -501,7 +502,7 @@ fn x() {
                 style: Style {
                     bg: [31, 36, 48],
                     color: [255, 255, 255],
-                    flags: 0,
+                    flags: Style::UNDERLINE,
                 },
                 letter: Some('['),
             },
@@ -509,7 +510,7 @@ fn x() {
                 style: Style {
                     bg: [31, 36, 48],
                     color: [255, 173, 102],
-                    flags: 0,
+                    flags: Style::UNDERLINE,
                 },
                 letter: Some('='),
             },
@@ -517,7 +518,7 @@ fn x() {
                 style: Style {
                     bg: [31, 36, 48],
                     color: [204, 202, 194],
-                    flags: 0,
+                    flags: Style::UNDERLINE,
                 },
                 letter: Some('s'),
             },
@@ -525,7 +526,7 @@ fn x() {
                 style: Style {
                     bg: [31, 36, 48],
                     color: [255, 173, 102],
-                    flags: 0,
+                    flags: Style::UNDERLINE,
                 },
                 letter: Some('>'),
             },
@@ -533,7 +534,7 @@ fn x() {
                 style: Style {
                     bg: [31, 36, 48],
                     color: [255, 255, 255],
-                    flags: 0,
+                    flags: 5,
                 },
                 letter: Some(']'),
             },
