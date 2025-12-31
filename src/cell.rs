@@ -21,13 +21,11 @@ impl Cell {
             )
         }
     }
-    pub fn load(x: &[u8]) -> &[Cell] {
-        unsafe {
-            std::slice::from_raw_parts(
-                x.as_ptr().cast(),
-                x.len() / size_of::<Cell>(),
-            )
-        }
+    pub unsafe fn load(x: &[u8]) -> &[Cell] {
+        std::slice::from_raw_parts(
+            x.as_ptr().cast(),
+            x.len() / size_of::<Cell>(),
+        )
     }
 }
 impl Style {

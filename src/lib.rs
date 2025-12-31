@@ -161,7 +161,7 @@ pub unsafe fn render(
                             as u32
                             + offset_y,
                     ),
-                    (fw.ceil() as _, fh_.ceil() as _),
+                    (fw.ceil() as u32 + 1, fh_.ceil() as u32 + 1),
                     cell.style.bg,
                 );
 
@@ -541,5 +541,15 @@ fn x() {
         let mut f = Fonts::new(*FONT, *FONT, *FONT, *FONT);
         render_owned(&z, (2, 2), 18.0, &mut f, 2.0, true);
         render_owned(&z, (2, 2), 18.0, &mut f, 2.0, true).show();
+        let cells = Cell::load(include_bytes!("../cells"));
+        render_owned(
+            &cells,
+            (33, cells.len() / 33),
+            18.0,
+            &mut f,
+            10.0,
+            true,
+        )
+        .show();
     }
 }
