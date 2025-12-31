@@ -12,6 +12,24 @@ impl Hash for Cell {
         self.letter.hash(state);
     }
 }
+impl Cell {
+    pub fn store(x: &[Cell]) -> &[u8] {
+        unsafe {
+            std::slice::from_raw_parts(
+                x.as_ptr().cast(),
+                x.len() * size_of::<Cell>(),
+            )
+        }
+    }
+    pub fn load(x: &[u8]) -> &[Cell] {
+        unsafe {
+            std::slice::from_raw_parts(
+                x.as_ptr().cast(),
+                x.len() / size_of::<Cell>(),
+            )
+        }
+    }
+}
 impl Style {
     pub fn basic(self, c: char) -> Cell {
         Cell {
