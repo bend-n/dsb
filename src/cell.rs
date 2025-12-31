@@ -1,4 +1,5 @@
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(C)]
 pub struct Style {
     pub bg: [u8; 3],
     pub color: [u8; 3],

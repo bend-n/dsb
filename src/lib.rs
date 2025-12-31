@@ -245,7 +245,6 @@ pub unsafe fn render(
                                 characters[x.data as usize] = (x.id, x.x);
                             })
                         });
-                        
                     });
             };
         }
@@ -540,7 +539,7 @@ fn x() {
             },
         ];
         let mut f = Fonts::new(*FONT, *FONT, *FONT, *FONT);
-        render_owned(&z, (5, 1), 20.0, &mut f, 2.0, true);
-        render_owned(&z, (5, 1), 20.0, &mut f, 2.0, true).show();
+        render_owned(&z, (2, 2), 18.0, &mut f, 2.0, true);
+        render_owned(&z, (2, 2), 18.0, &mut f, 2.0, true).show();
     }
 }
