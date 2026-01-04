@@ -151,7 +151,6 @@ pub unsafe fn render(
                     ),
                     fw.floor() as _, fh_.ceil() as _, cell.style.bg,
                 );*/
-
                 fill_in(
                     i.as_mut(),
                     (
@@ -469,6 +468,7 @@ pub unsafe fn fill_in(
     let p = image.buffer_mut().as_mut_ptr();
     let n = w as usize * 3;
     let from = p.add(from as usize * 3);
+    dbg!(n);
 
     for y in y1 + 1..(y1 + h).min(image.height()) {
         core::ptr::copy(from, p.add(((y * iw + x1) * 3) as _), n);
