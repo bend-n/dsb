@@ -136,6 +136,7 @@ pub unsafe fn render(
     let fac = ppem / met.units_per_em as f32;
     let (fw, fh_) = dims(&fonts.regular, ppem);
     let fh = fh_;
+    dbg!(fw.ceil() + 1.);
     // let (w, h) = (
     //     (fw * c as f32).ceil() as u32,
     //     height(&fonts.regular, ppem, line_spacing, r),
@@ -468,7 +469,6 @@ pub unsafe fn fill_in(
     let p = image.buffer_mut().as_mut_ptr();
     let n = w as usize * 3;
     let from = p.add(from as usize * 3);
-    dbg!(n);
 
     for y in y1 + 1..(y1 + h).min(image.height()) {
         core::ptr::copy(from, p.add(((y * iw + x1) * 3) as _), n);
