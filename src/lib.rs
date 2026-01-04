@@ -136,7 +136,6 @@ pub unsafe fn render(
     let fac = ppem / met.units_per_em as f32;
     let (fw, fh_) = dims(&fonts.regular, ppem);
     let fh = fh_;
-    dbg!(fw.ceil() + 1.);
     // let (w, h) = (
     //     (fw * c as f32).ceil() as u32,
     //     height(&fonts.regular, ppem, line_spacing, r),
@@ -467,12 +466,34 @@ pub unsafe fn fill_in(
     }
     let from = y1 * iw + x1;
     let p = image.buffer_mut().as_mut_ptr();
-    let n = w as usize * 3;
-    let from = p.add(from as usize * 3);
+    match w {
+        12 => {
+            let n = w as usize * 3;
+            let from = p.add(from as usize * 3);
 
-    for y in y1 + 1..(y1 + h).min(image.height()) {
-        core::ptr::copy(from, p.add(((y * iw + x1) * 3) as _), n);
-        // image.buffer_mut().copy_within(from.clone(), ((y * iw + x1)*3) as _);
+            for y in y1 + 1..(y1 + h).min(image.height()) {
+                core::ptr::copy(from, p.add(((y * iw + x1) * 3) as _), n);
+                // image.buffer_mut().copy_within(from.clone(), ((y * iw + x1)*3) as _);
+            }
+        }
+        13 => {
+            let n = w as usize * 3;
+            let from = p.add(from as usize * 3);
+
+            for y in y1 + 1..(y1 + h).min(image.height()) {
+                core::ptr::copy(from, p.add(((y * iw + x1) * 3) as _), n);
+                // image.buffer_mut().copy_within(from.clone(), ((y * iw + x1)*3) as _);
+            }
+        }
+        _ => {
+            let n = w as usize * 3;
+            let from = p.add(from as usize * 3);
+
+            for y in y1 + 1..(y1 + h).min(image.height()) {
+                core::ptr::copy(from, p.add(((y * iw + x1) * 3) as _), n);
+                // image.buffer_mut().copy_within(from.clone(), ((y * iw + x1)*3) as _);
+            }
+        }
     }
 }
 
