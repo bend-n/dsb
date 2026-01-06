@@ -63,6 +63,7 @@ impl Style {
     pub const ITALIC: u8 = 1 << 2;
     pub const UNDERLINE: u8 = 1 << 3;
     pub const STRIKETHROUGH: u8 = 1 << 4;
+    pub const UNDERCURL: u8 = 1 << 5;
 }
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub struct Cell {

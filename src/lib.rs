@@ -106,7 +106,7 @@ pub unsafe fn render_owned(
     subpixel: bool,
 ) -> Image<Box<[u8]>, 3> {
     let (w, h) = size(&fonts.regular, ppem, line_spacing, (c, r));
-    let mut i = Image::build(w as _, h as _).fill([255; 3]);
+    let mut i = Image::build(w as u32, h as u32).fill([255; 3]);
     render(
         cells,
         (c, r),
@@ -281,6 +281,33 @@ pub unsafe fn render(
                     )
                 };
             }
+            if (cell.style.flags & Style::UNDERCURL) != 0 {
+                let mut buffer =
+                    Image::build(fw.ceil() as u32, fh.ceil() as u32)
+                        .fill([0u8]);
+
+                undercurl(
+                    fw.ceil() as u32,
+                    fh.ceil() as u32,
+                    1 + ((met.ascent - met.underline_offset) * fac) as u32,
+                    2,
+                    |x, y, v| {
+                        let [p] = buffer.pixel_mut(x, y);
+                        *p = p.saturating_add(v);
+                    },
+                );
+                unsafe {
+                    i.blend_alpha_and_color_at(
+                        &buffer.as_ref(),
+                        color,
+                        (j as f32 * fw).floor() as u32 // _
+                            + offset_x,
+                        (k as f32 * (fh + line_spacing * fac)).floor()
+                            as u32
+                            + offset_y,
+                    );
+                }
+            }
             // if (cell.style.flags & Style::STRIKETHROUGH) != 0 {
             //     unsafe {
             //         i.as_mut().overlay_at(
@@ -386,6 +413,61 @@ pub unsafe fn render(
     // }
 }
 
+// https://github.com/kovidgoyal/kitty/blob/df17142ea4fdaa31a54015b7baab6a451a593433/kitty/decorations.c#L147
+fn undercurl(
+    fw: u32,
+    fh: u32,
+    position: u32,
+    thickness: u32,
+    mut f: impl FnMut(u32, u32, u8),
+) {
+    let max_x = fw - 1;
+    let max_y = fh - 1;
+    let xfactor = /* | 2 */ 4.0 * std::f32::consts::PI / max_x as f32;
+
+    let mut position = position.min(
+        fh.saturating_sub(thickness / 2 + thickness % 2 /*q+rem*/),
+    );
+    let thickness =
+        1u32.max(thickness.min(fh.saturating_sub(position + 1)));
+
+    let max_height = fh - position.saturating_sub(thickness / 2);
+    let half_height = 1.max(max_height / 4);
+
+    let thickness = if false {
+        half_height.max(thickness)
+    } else {
+        1.max(thickness) - if thickness < 3 { 1 } else { 2 }
+    };
+
+    position += half_height * 2;
+    if position + half_height > max_y {
+        position = max_y - half_height;
+    };
+
+    // let mut miny = fh;
+    // let mut maxy = 0u32;
+    let mut spx = |x, y: i32, val| {
+        let y = ((y + position as i32).max(0) as u32).min(max_y);
+        f(x, y, val);
+        y
+    };
+    for x in 0..fw {
+        let y = half_height as f32 * ((x as f32) * xfactor).cos();
+        let y1 = (y.floor() - thickness as f32) as i32;
+        let y2 = y.ceil() as i32;
+        let i2 = (255.0 * (y - y.floor()).abs()) as u32;
+        let i1 = 255 - i2 as u8;
+        let _yc = spx(x, y1, i1);
+        // if i1 != 0 { miny = miny.min(yc); maxy = maxy.max(yc); }
+        let _yc = spx(x, y2, i2 as u8);
+        // if i2 != 0 { miny = miny.min(yc); maxy = maxy.max(yc); }
+        for t in 1..=thickness {
+            spx(x, y1 + t as i32, 255);
+        }
+    }
+}
+
 fn blend(m: [u8; 3], c: [u8; 3], to: &mut [u8; 3]) {
     *to = [
         ((c[0] as u16 * m[2] as u16 + (255 - m[2] as u16) * to[0] as u16)
@@ -466,34 +548,21 @@ pub unsafe fn fill_in(
     }
     let from = y1 * iw + x1;
     let p = image.buffer_mut().as_mut_ptr();
+    macro_rules! d_ {
+        () => {{
+            let n = w as usize * 3;
+            let from = p.add(from as usize * 3);
+
+            for y in y1 + 1..(y1 + h).min(image.height()) {
+                core::ptr::copy_nonoverlapping(from, p.add(((y * iw + x1) * 3) as _), n);
+                // image.buffer_mut().copy_within(from.clone(), ((y * iw + x1)*3) as _);
+            }
+        }};
+    }
     match w {
-        12 => {
-            let n = w as usize * 3;
-            let from = p.add(from as usize * 3);
-
-            for y in y1 + 1..(y1 + h).min(image.height()) {
-                core::ptr::copy(from, p.add(((y * iw + x1) * 3) as _), n);
-                // image.buffer_mut().copy_within(from.clone(), ((y * iw + x1)*3) as _);
-            }
-        }
-        13 => {
-            let n = w as usize * 3;
-            let from = p.add(from as usize * 3);
-
-            for y in y1 + 1..(y1 + h).min(image.height()) {
-                core::ptr::copy(from, p.add(((y * iw + x1) * 3) as _), n);
-                // image.buffer_mut().copy_within(from.clone(), ((y * iw + x1)*3) as _);
-            }
-        }
-        _ => {
-            let n = w as usize * 3;
-            let from = p.add(from as usize * 3);
-
-            for y in y1 + 1..(y1 + h).min(image.height()) {
-                core::ptr::copy(from, p.add(((y * iw + x1) * 3) as _), n);
-                // image.buffer_mut().copy_within(from.clone(), ((y * iw + x1)*3) as _);
-            }
-        }
+        13 => d_!(),
+        12 => d_!(),
+        _ => d_!(),
     }
 }
 
@@ -522,7 +591,7 @@ fn x() {
                 style: Style {
                     bg: [31, 36, 48],
                     color: [255, 255, 255],
-                    flags: Style::UNDERLINE,
+                    flags: Style::UNDERCURL,
                 },
                 letter: Some('['),
             },
@@ -530,7 +599,7 @@ fn x() {
                 style: Style {
                     bg: [31, 36, 48],
                     color: [255, 173, 102],
-                    flags: Style::UNDERLINE,
+                    flags: Style::UNDERCURL,
                 },
                 letter: Some('='),
             },
@@ -538,7 +607,7 @@ fn x() {
                 style: Style {
                     bg: [31, 36, 48],
                     color: [204, 202, 194],
-                    flags: Style::UNDERLINE,
+                    flags: Style::UNDERCURL,
                 },
                 letter: Some('s'),
             },
@@ -546,7 +615,7 @@ fn x() {
                 style: Style {
                     bg: [31, 36, 48],
                     color: [255, 173, 102],
-                    flags: Style::UNDERLINE,
+                    flags: Style::UNDERCURL,
                 },
                 letter: Some('>'),
             },
@@ -554,7 +623,7 @@ fn x() {
                 style: Style {
                     bg: [31, 36, 48],
                     color: [255, 255, 255],
-                    flags: 5,
+                    flags: Style::UNDERCURL,
                 },
                 letter: Some(']'),
             },
