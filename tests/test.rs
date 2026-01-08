@@ -23,8 +23,9 @@ fn main() {
         .map(|x: char| dsb::Cell {
             style: Style {
                 bg: [255; 3],
-                color: [132, 148, 164],
+                fg: [132, 148, 164],
                 flags: 0,
+                ..Default::default()
             },
             letter: Some(x),
         })

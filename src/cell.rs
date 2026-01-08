@@ -2,7 +2,8 @@
 #[repr(C)]
 pub struct Style {
     pub bg: [u8; 3],
-    pub color: [u8; 3],
+    pub fg: [u8; 3],
+    pub secondary_color: [u8; 3],
     // one of [Style::BOLD]..
     pub flags: u8,
 }
@@ -47,7 +48,8 @@ impl Default for Style {
     fn default() -> Self {
         Self {
             bg: [0; 3],
-            color: [255; 3],
+            fg: [255; 3],
+            secondary_color: [0; 3],
             flags: 0,
         }
     }
@@ -64,6 +66,7 @@ impl Style {
     pub const UNDERLINE: u8 = 1 << 3;
     pub const STRIKETHROUGH: u8 = 1 << 4;
     pub const UNDERCURL: u8 = 1 << 5;
+    pub const USE_SECONDARY_COLOR: u8 = 1 << 7;
 }
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub struct Cell {
@@ -89,7 +92,7 @@ impl BitOr<u8> for Style {
 impl BitOrAssign<(u8, [u8; 3])> for Style {
     fn bitor_assign(&mut self, (f, c): (u8, [u8; 3])) {
         self.flags |= f;
-        self.color = c;
+        self.fg = c;
     }
 }
 impl BitAnd<(u8, [u8; 3])> for Style {

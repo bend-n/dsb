@@ -16,6 +16,8 @@
 )]
 #![allow(unsafe_op_in_unsafe_fn)]
 use std::iter::{successors, zip};
+
+use Default::default;
 pub mod cell;
 use atools::prelude::*;
 use fimg::{Image, OverlayAt};
@@ -260,7 +262,13 @@ pub unsafe fn render(
             .zip(0..)
             .map(|(&(id, x), index)| (&col[index], id, x, index))
         {
-            let mut color = cell.style.color;
+            let mut color = cell.style.fg;
+            let sec =
+                if (cell.style.flags & Style::USE_SECONDARY_COLOR) != 0 {
+                    cell.style.secondary_color
+                } else {
+                    color
+                };
             if (cell.style.flags & Style::DIM) != 0 {
                 color = color.map(|x| x / 2);
             }
@@ -271,11 +279,12 @@ pub unsafe fn render(
                             fw.ceil() as u32,
                             ((0.05 * ppem) as u32).max(1),
                         )
-                        .fill(color.join(255)),
+                        .fill(sec.join(255)),
                         ((j as f32 * fw).round() as i32 + offset_x as i32)
                             .max(0) as u32,
                         (k as f32 * (fh + line_spacing * fac)
-                            + (met.ascent * fac * 1.05))
+                            + ((met.ascent - met.underline_offset) * fac))
+                            // + (met.ascent * fac * 1.05))
                             .floor() as u32
                             + offset_y,
                     )
@@ -299,7 +308,7 @@ pub unsafe fn render(
                 unsafe {
                     i.blend_alpha_and_color_at(
                         &buffer.as_ref(),
-                        color,
+                        sec,
                         (j as f32 * fw).floor() as u32 // _
                             + offset_x,
                         (k as f32 * (fh + line_spacing * fac)).floor()
@@ -590,40 +599,45 @@ fn x() {
             Cell {
                 style: Style {
                     bg: [31, 36, 48],
-                    color: [255, 255, 255],
+                    fg: [255, 255, 255],
                     flags: Style::UNDERCURL,
+                    ..default()
                 },
                 letter: Some('['),
             },
             Cell {
                 style: Style {
                     bg: [31, 36, 48],
-                    color: [255, 173, 102],
+                    fg: [255, 173, 102],
                     flags: Style::UNDERCURL,
+                    ..default()
                 },
                 letter: Some('='),
             },
             Cell {
                 style: Style {
                     bg: [31, 36, 48],
-                    color: [204, 202, 194],
-                    flags: Style::UNDERCURL,
+                    fg: [204, 202, 194],
+                    secondary_color: [255; 3],
+                    flags: Style::UNDERLINE | Style::USE_SECONDARY_COLOR,
                 },
                 letter: Some('s'),
             },
             Cell {
                 style: Style {
                     bg: [31, 36, 48],
-                    color: [255, 173, 102],
-                    flags: Style::UNDERCURL,
+                    fg: [255, 173, 102],
+                    secondary_color: [255; 3],
+                    flags: Style::UNDERLINE | Style::USE_SECONDARY_COLOR,
                 },
                 letter: Some('>'),
             },
             Cell {
                 style: Style {
                     bg: [31, 36, 48],
-                    color: [255, 255, 255],
-                    flags: Style::UNDERCURL,
+                    flags: Style::UNDERLINE,
+                    fg: [255, 255, 255],
+                    ..default()
                 },
                 letter: Some(']'),
             },
@@ -631,15 +645,15 @@ fn x() {
         let mut f = Fonts::new(*FONT, *FONT, *FONT, *FONT);
         render_owned(&z, (2, 2), 18.0, &mut f, 2.0, true);
         render_owned(&z, (2, 2), 18.0, &mut f, 2.0, true).show();
-        let cells = Cell::load(include_bytes!("../cells"));
-        render_owned(
-            &cells,
-            (33, cells.len() / 33),
-            18.0,
-            &mut f,
-            10.0,
-            true,
-        )
-        .show();
+        // let cells = Cell::load(include_bytes!("../cells"));
+        // render_owned(
+        //     &cells,
+        //     (33, cells.len() / 33),
+        //     18.0,
+        //     &mut f,
+        //     10.0,
+        //     true,
+        // )
+        // .show();
     }
 }
