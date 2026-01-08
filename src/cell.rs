@@ -60,7 +60,7 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign};
 impl Style {
-    pub fn new(fg: [u8; 3], bg: [u8; 3]) -> Self {
+    pub const fn new(fg: [u8; 3], bg: [u8; 3]) -> Self {
         Self {
             fg,
             bg,
