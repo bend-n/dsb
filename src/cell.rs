@@ -60,6 +60,14 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign};
 impl Style {
+    pub fn new(fg: [u8; 3], bg: [u8; 3]) -> Self {
+        Self {
+            fg,
+            bg,
+            secondary_color: fg,
+            flags: 0,
+        }
+    }
     pub const BOLD: u8 = 1;
     pub const DIM: u8 = 1 << 1;
     pub const ITALIC: u8 = 1 << 2;
