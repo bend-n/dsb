@@ -1,5 +1,8 @@
 #![allow(incomplete_features)]
 #![feature(
+    const_default,
+    derive_const,
+    const_ops,
     bigint_helper_methods,
     proc_macro_hygiene,
     portable_simd,

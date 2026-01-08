@@ -30,26 +30,34 @@ impl Cell {
     }
 }
 impl Style {
-    pub fn basic(self, c: char) -> Cell {
+    pub const fn basic(self, c: char) -> Cell {
         Cell {
             style: self,
             letter: Some(c),
         }
     }
-    pub fn empty(self) -> Cell {
+    pub const fn empty(self) -> Cell {
         Cell {
             style: self,
             letter: None,
         }
     }
+    pub const fn new(fg: [u8; 3], bg: [u8; 3]) -> Self {
+        Self {
+            fg,
+            bg,
+            secondary_color: fg,
+            flags: 0,
+        }
+    }
 }
 
-impl Default for Style {
+impl const Default for Style {
     fn default() -> Self {
         Self {
             bg: [0; 3],
             fg: [255; 3],
-            secondary_color: [0; 3],
+            secondary_color: [255; 3],
             flags: 0,
         }
     }
@@ -60,14 +68,6 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign};
 impl Style {
-    pub const fn new(fg: [u8; 3], bg: [u8; 3]) -> Self {
-        Self {
-            fg,
-            bg,
-            secondary_color: fg,
-            flags: 0,
-        }
-    }
     pub const BOLD: u8 = 1;
     pub const DIM: u8 = 1 << 1;
     pub const ITALIC: u8 = 1 << 2;
@@ -76,7 +76,8 @@ impl Style {
     pub const UNDERCURL: u8 = 1 << 5;
     pub const USE_SECONDARY_COLOR: u8 = 1 << 7;
 }
-#[derive(Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive_const(Default)]
 pub struct Cell {
     pub style: Style,
     pub letter: Option<char>,
@@ -87,7 +88,7 @@ impl Debug for Cell {
         write!(f, "{}", self.letter.unwrap_or(' '))
     }
 }
-impl BitOr<u8> for Style {
+impl const BitOr<u8> for Style {
     type Output = Self;
 
     fn bitor(self, rhs: u8) -> Self::Output {
@@ -97,13 +98,13 @@ impl BitOr<u8> for Style {
         }
     }
 }
-impl BitOrAssign<(u8, [u8; 3])> for Style {
+impl const BitOrAssign<(u8, [u8; 3])> for Style {
     fn bitor_assign(&mut self, (f, c): (u8, [u8; 3])) {
         self.flags |= f;
         self.fg = c;
     }
 }
-impl BitAnd<(u8, [u8; 3])> for Style {
+impl const BitAnd<(u8, [u8; 3])> for Style {
     type Output = Style;
     fn bitand(mut self, (flags, bg): (u8, [u8; 3])) -> Self::Output {
         self.flags |= flags;
@@ -111,14 +112,14 @@ impl BitAnd<(u8, [u8; 3])> for Style {
         self
     }
 }
-impl BitAndAssign<(u8, [u8; 3])> for Style {
+impl const BitAndAssign<(u8, [u8; 3])> for Style {
     fn bitand_assign(&mut self, rhs: (u8, [u8; 3])) {
         *self = *self & rhs;
     }
 }
 
 impl Cell {
-    pub fn basic(c: char) -> Self {
+    pub const fn basic(c: char) -> Self {
         Self {
             letter: Some(c),
             ..default()
