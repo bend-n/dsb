@@ -11,6 +11,7 @@ implicit-fn = "0.1.0"
 itertools = "0.14.0"
 lower = "0.2.0"
 lru-cache = "0.1.2"
+serde = { version = "1.0.228", features = ["serde_derive"] }
 swash = "0.2.5"
 swizzle = "0.1.0"
 umath = "0.0.7"

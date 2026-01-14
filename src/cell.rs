@@ -1,4 +1,4 @@
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[repr(C)]
 pub struct Style {
     pub bg: [u8; 3],
@@ -67,6 +67,8 @@ use std::default::Default::default;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign};
+
+use serde::{Deserialize, Serialize};
 impl Style {
     pub const BOLD: u8 = 1;
     pub const DIM: u8 = 1 << 1;
@@ -76,7 +78,7 @@ impl Style {
     pub const UNDERCURL: u8 = 1 << 5;
     pub const USE_SECONDARY_COLOR: u8 = 1 << 7;
 }
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[derive_const(Default)]
 pub struct Cell {
     pub style: Style,
