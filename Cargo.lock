@@ -23,7 +23,7 @@ checksum = "59fdfa9d3089fc0aa2676b7b3fe46484581faeef796d7b19b6eb1b908664efc3"
 [[package]]
 name = "atools"
 version = "0.1.12"
-source = "git+https://github.com/bend-n/atools#1df461b58cd728c1d6ad4fb5161cd1e37d6d773f"
+source = "git+https://git.bendn.org/atools#1df461b58cd728c1d6ad4fb5161cd1e37d6d773f"
 
 [[package]]
 name = "bitflags"
@@ -88,7 +88,7 @@ name = "dsb"
 version = "0.1.0"
 dependencies = [
  "array_chunks",
- "atools 0.1.12 (git+https://github.com/bend-n/atools)",
+ "atools 0.1.12 (git+https://git.bendn.org/atools)",
  "fimg",
  "implicit-fn",
  "itertools",
@@ -124,7 +124,7 @@ checksum = "6a02dba6a60cd31533cf16561ced53239686d18f1464bff49579dd320fcea081"
 [[package]]
 name = "fimg"
 version = "0.4.51"
-source = "git+https://github.com/bend-n/fimg#e72d81b7d072e6ad53dc4b9eeefcac04f5cbdd18"
+source = "git+https://git.bendn.org/fimg#e72d81b7d072e6ad53dc4b9eeefcac04f5cbdd18"
 dependencies = [
  "array_chunks",
  "atools 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
