@@ -480,14 +480,15 @@ fn undercurl(
     }
 }
 
+fn b(m: u8, c: u8, t: u8) -> u8 {
+    ((c as u16 * m as u16 + (255 - m as u16) * t as u16) / 255) as u8
+}
+
 fn blend(m: [u8; 3], c: [u8; 3], to: &mut [u8; 3]) {
     *to = [
-        ((c[0] as u16 * m[2] as u16 + (255 - m[2] as u16) * to[0] as u16)
-            / 255) as u8,
-        ((c[1] as u16 * m[1] as u16 + (255 - m[1] as u16) * to[1] as u16)
-            / 255) as u8,
-        ((c[2] as u16 * m[0] as u16 + (255 - m[0] as u16) * to[2] as u16)
-            / 255) as u8,
+        b(m[2], c[0], to[0]),
+        b(m[1], c[1], to[1]),
+        b(m[0], c[2], to[2]),
     ];
 }
 
@@ -499,17 +500,16 @@ fn into(
     (x_, y_): (u32, u32),
     color: [u8; 3],
 ) {
-    (0..with.height())
-        .flat_map(|y| (0..with.width()).map(move |x| (x, y)))
-        .zip(with.chunked())
-        .for_each(|((x, y), d)| {
-            i.get_pixel_mut(x.wrapping_add(x_), y.wrapping_add(y_)).map(
-                |x| {
-                    let mask = d.init();
-                    blend(mask, color, x);
-                },
-            );
-        })
+    for y in 0..with.height() {
+        for x in 0..with.width() {
+            let d = unsafe { with.pixel(x, y) };
+            let x = unsafe {
+                i.pixel_mut(x.wrapping_add(x_), y.wrapping_add(y_))
+            };
+            let mask = d.init();
+            blend(mask, color, x);
+        }
+    }
 }
 
 pub fn fit(
