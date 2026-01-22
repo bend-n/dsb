@@ -7,18 +7,18 @@ use fimg::Image;
 use swash::FontRef;
 
 fn main() {
-    let ppem = 15.0;
+    let ppem = 20.0;
     let lh = -400.0;
     // let (fw, fh) = dsb::dims(&FONT, ppem);
-    let (w, h) = (2160, 1440);
+    let (w, h) = (2560, 1440);
     dbg!(w, h);
     let (c, r) = dsb::fit(&FONT, ppem, lh, (w, h));
 
     dbg!(c, r);
     // panic!();
-    let cells = include_str!("../src/lib.rs")
+    let cells = include_str!("haus.txt")
         .chars()
-        .filter(|x| !x.is_whitespace())
+        .filter(|x| *x != '\n')
         .take((c * r) as _)
         .map(|x: char| dsb::Cell {
             style: Style {
@@ -42,8 +42,11 @@ fn main() {
             true,
         )
     };
-    println!("{:?}", now.elapsed());
-    x.as_ref().show();
+    assert_eq!(include_bytes!("res"), x.bytes());
+    std::hint::black_box(x);
+
+    // println!("{:?}", now.elapsed());
+    // x.as_ref().show();
 }
 pub static FONT: LazyLock<FontRef<'static>> = LazyLock::new(|| {
     FontRef::from_index(

@@ -23,7 +23,7 @@ checksum = "59fdfa9d3089fc0aa2676b7b3fe46484581faeef796d7b19b6eb1b908664efc3"
 [[package]]
 name = "atools"
 version = "0.1.12"
-source = "git+https://git.bendn.org/atools#1df461b58cd728c1d6ad4fb5161cd1e37d6d773f"
+source = "git+https://git.bendn.org/atools#fd0a7b17127085f3f4e31c6f0cfdf3f909c5cdec"
 
 [[package]]
 name = "bitflags"
@@ -89,6 +89,7 @@ version = "0.1.0"
 dependencies = [
  "array_chunks",
  "atools 0.1.12 (git+https://git.bendn.org/atools)",
+ "car",
  "fimg",
  "implicit-fn",
  "itertools",
@@ -124,7 +125,7 @@ checksum = "6a02dba6a60cd31533cf16561ced53239686d18f1464bff49579dd320fcea081"
 [[package]]
 name = "fimg"
 version = "0.4.51"
-source = "git+https://git.bendn.org/fimg#e72d81b7d072e6ad53dc4b9eeefcac04f5cbdd18"
+source = "git+https://git.bendn.org/fimg#1826223f5db471ea18f95ca2685cb4d009b104ad"
 dependencies = [
  "array_chunks",
  "atools 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -259,9 +260,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.105"
+version = "1.0.106"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "535d180e0ecab6268a3e718bb9fd44db66bbbc256257165fc699dadf70d16fe7"
+checksum = "8fd00f0bb2e90d81d1044c2b32617f68fcb9fa3bb7640c23e9c748e53fb30934"
 dependencies = [
  "unicode-ident",
 ]

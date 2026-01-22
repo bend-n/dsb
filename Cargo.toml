@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 array_chunks = "1.0.0"
 atools = { git = "https://git.bendn.org/atools", version = "0.1.7" }
+car = "0.1.3"
 fimg = { git = "https://git.bendn.org/fimg", features = ["save"] }
 implicit-fn = "0.1.0"
 itertools = "0.14.0"
@@ -19,3 +20,7 @@ umath = "0.0.7"
 [[test]]
 name = "test"
 harness = false
+
+[profile.release]
+opt-level = 3
+debug = true

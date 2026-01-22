@@ -1,5 +1,8 @@
 #![allow(incomplete_features)]
 #![feature(
+    range_into_bounds,
+    array_try_from_fn,
+    const_array,
     const_default,
     derive_const,
     const_ops,
@@ -18,7 +21,9 @@
     import_trait_associated_functions
 )]
 #![allow(unsafe_op_in_unsafe_fn)]
+use std::array::try_from_fn;
 use std::iter::{successors, zip};
+use std::ops::IntoBounds;
 
 use Default::default;
 pub mod cell;
@@ -403,8 +408,9 @@ pub unsafe fn render(
             // i.chunked_mut().for_each(|x| *x = [0; 3]);
         }
     }
+    // let ih = i.height();
     // successors(Some(fh), |&x| {
-    //     (x + fh < 1832 as f32).then_some(x + fh + (line_spacing * fac))
+    //     (x + fh < ih as f32).then_some(x + fh + (line_spacing * fac))
     // })
     // .for_each(|x| {
     //     i.line((0, x as i32), (2000, x as i32), [255, 0, 255]);
@@ -500,8 +506,43 @@ fn into(
     (x_, y_): (u32, u32),
     color: [u8; 3],
 ) {
+    type u8x24 = Simd<u8, 24>;
+    use std::simd::prelude::*;
+    let c = u8x24::from_array([color; 8].flatten()).cast::<u16>();
     for y in 0..with.height() {
-        for x in 0..with.width() {
+        let mut wx_ = 0;
+        while with.width() - wx_ >= 8 {
+            unsafe {
+                // 0..32
+                let first8 = u8x32::from_array(
+                    with.pixels((wx_..wx_ + 8, y))
+                        .as_array::<8>()
+                        .unwrap_unchecked()
+                        .flatten(),
+                );
+                const BGR_DISCARD_ALPHA: [usize; 24] = car::map!(
+                    range::<32>().chunked::<4>(),
+                    |[r, g, b, _]| [b, g, r]
+                )
+                .flatten();
+
+                let mask =
+                    simd_swizzle!(first8, BGR_DISCARD_ALPHA).cast::<u16>();
+                let to_b = i
+                    .pixels_mut((x_ + wx_..x_ + wx_ + 8, y + y_))
+                    .as_flattened_mut();
+                let to = u8x24::load_or_default(to_b).cast::<u16>();
+                let result: u8x24 = ((c * mask
+                    + (Simd::splat(255) - mask) * to.cast())
+                    / Simd::splat(255))
+                .cast::<u8>();
+                result.store_select(to_b, Mask::from_bitmask(!0));
+
+                wx_ += 8;
+            };
+        }
+
+        for x in wx_..with.width() {
             let d = unsafe { with.pixel(x, y) };
             let x = unsafe {
                 i.pixel_mut(x.wrapping_add(x_), y.wrapping_add(y_))
@@ -544,7 +585,7 @@ pub fn size(
         let m = font.metrics(&[]);
         let f = ppem / m.units_per_em as f32;
         let ls = line_spacing * f;
-        (((fh + ls) * r as f32).ceil() - ls) as usize
+        (((fh + ls) * r as f32).ceil() - ls).ceil() as usize
     })
 }
 #[unsafe(no_mangle)]
