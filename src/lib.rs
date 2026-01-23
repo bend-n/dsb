@@ -129,6 +129,7 @@ pub unsafe fn render_owned(
     );
     i
 }
+
 #[implicit_fn::implicit_fn]
 pub unsafe fn render(
     cells: &[Cell],
@@ -380,6 +381,7 @@ pub unsafe fn render(
                     + (k as f32 * line_spacing as f32 * fac) as i32)
                     + offset_y as i32)
                     .max(0) as u32;
+
                 if subpixel {
                     into(
                         i.as_mut(),
@@ -499,50 +501,65 @@ fn blend(m: [u8; 3], c: [u8; 3], to: &mut [u8; 3]) {
 }
 
 #[implicit_fn::implicit_fn]
-#[unsafe(no_mangle)]
 fn into(
     mut i: Image<&mut [u8], 3>,
     with: Image<&[u8], 4>,
     (x_, y_): (u32, u32),
     color: [u8; 3],
 ) {
-    type u8x24 = Simd<u8, 24>;
     use std::simd::prelude::*;
-    let c = u8x24::from_array([color; 8].flatten()).cast::<u16>();
+
     for y in 0..with.height() {
         let mut wx_ = 0;
-        while with.width() - wx_ >= 8 {
-            unsafe {
-                // 0..32
-                let first8 = u8x32::from_array(
-                    with.pixels((wx_..wx_ + 8, y))
-                        .as_array::<8>()
-                        .unwrap_unchecked()
-                        .flatten(),
-                );
-                const BGR_DISCARD_ALPHA: [usize; 24] = car::map!(
-                    range::<32>().chunked::<4>(),
-                    |[r, g, b, _]| [b, g, r]
-                )
-                .flatten();
-
-                let mask =
-                    simd_swizzle!(first8, BGR_DISCARD_ALPHA).cast::<u16>();
-                let to_b = i
-                    .pixels_mut((x_ + wx_..x_ + wx_ + 8, y + y_))
+        macro_rules! read {
+            ($k:ident $n:literal) => {
+                $k with.width() - wx_ >= $n {
+                    // (wx..wx + $n) * 4
+                    let first8 = unsafe {
+                        with.pixels((wx_..wx_ + $n, y))
+                            .as_ptr()
+                            .cast::<Simd<u8, { $n * 4 }>>()
+                            .read_unaligned()
+                    };
+                    const BGR_DISCARD_ALPHA: [usize; $n * 3] = car::map!(
+                        range::<{ $n * 4 }>().chunked::<4>(),
+                        |[r, g, b, _]| [b, g, r]
+                    )
+                    .flatten();
+                    let mask = simd_swizzle!(first8, BGR_DISCARD_ALPHA);
+                    let mask = mask.cast();
+                    let to_b = unsafe {
+                        i.pixels_mut((x_ + wx_..x_ + wx_ + $n, y + y_))
+                    }
                     .as_flattened_mut();
-                let to = u8x24::load_or_default(to_b).cast::<u16>();
-                let result: u8x24 = ((c * mask
-                    + (Simd::splat(255) - mask) * to.cast())
-                    / Simd::splat(255))
-                .cast::<u8>();
-                result.store_select(to_b, Mask::from_bitmask(!0));
-
-                wx_ += 8;
+                    let to = unsafe {
+                        to_b.as_ptr()
+                            .cast::<Simd<u8, { $n * 3 }>>()
+                            .read_unaligned()
+                    }
+                    .cast::<u16>();
+                    let c = Simd::from_array([color; $n].flatten())
+                        .cast::<u16>();
+                    let result = ((c * mask
+                        + (Simd::splat(255) - mask) * to.cast())
+                        / Simd::splat(255))
+                    .cast::<u8>();
+                    if cfg!(miri) {
+                        to_b.copy_from_slice(&result.to_array());
+                    } else {
+                        result.store_select(to_b, Mask::from_bitmask(!0));
+                    }
+                    wx_ += $n;
+                }
             };
         }
+        read!(while 10);
+        read!(if 4);
 
-        for x in wx_..with.width() {
+        let n = with.width() - wx_;
+        unsafe { core::hint::assert_unchecked(n < 10) };
+        for k in 0..n {
+            let x = k + wx_;
             let d = unsafe { with.pixel(x, y) };
             let x = unsafe {
                 i.pixel_mut(x.wrapping_add(x_), y.wrapping_add(y_))
@@ -597,7 +614,7 @@ pub unsafe fn fill_in(
 ) {
     let iw = image.width();
     for x in x1..1 + w + x1 {
-        image.set_pixel(x, y1, with);
+        image.set_pixel(x, y1, &with);
     }
     let from = y1 * iw + x1;
     let p = image.buffer_mut().as_mut_ptr();

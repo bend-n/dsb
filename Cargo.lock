@@ -125,7 +125,7 @@ checksum = "6a02dba6a60cd31533cf16561ced53239686d18f1464bff49579dd320fcea081"
 [[package]]
 name = "fimg"
 version = "0.4.51"
-source = "git+https://git.bendn.org/fimg#1826223f5db471ea18f95ca2685cb4d009b104ad"
+source = "git+https://git.bendn.org/fimg#be42cdc5c0e981915236b1bff7857256c4ae3458"
 dependencies = [
  "array_chunks",
  "atools 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -269,9 +269,9 @@ dependencies = [
 
 [[package]]
 name = "quote"
-version = "1.0.43"
+version = "1.0.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc74d9a594b72ae6656596548f56f667211f8a97b3d4c3d467150794690dc40a"
+checksum = "21b2ebcf727b7760c461f091f9f0f539b77b8e87f2fd88131e7f1b433b3cece4"
 dependencies = [
  "proc-macro2",
 ]
