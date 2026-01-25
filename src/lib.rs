@@ -116,7 +116,8 @@ pub unsafe fn render_owned(
     subpixel: bool,
 ) -> Image<Box<[u8]>, 3> {
     let (w, h) = size(&fonts.regular, ppem, line_spacing, (c, r));
-    let mut i = Image::build(w as u32, h as u32).fill([255; 3]);
+    let mut i = Image::build(w as u32, h as u32).fill([0, 255, 0]);
+    dbg!(i.width());
     render(
         cells,
         (c, r),
@@ -613,6 +614,7 @@ pub unsafe fn fill_in(
     with: [u8; 3],
 ) {
     let iw = image.width();
+    let w = if x1 + w >= iw { iw - x1 - 1 } else { w };
     for x in x1..1 + w + x1 {
         image.set_pixel(x, y1, &with);
     }
@@ -620,7 +622,7 @@ pub unsafe fn fill_in(
     let p = image.buffer_mut().as_mut_ptr();
     macro_rules! d_ {
         () => {{
-            let n = w as usize * 3;
+            let n = (w as usize + 1) * 3;
             let from = p.add(from as usize * 3);
 
             for y in y1 + 1..(y1 + h).min(image.height()) {
@@ -704,8 +706,10 @@ fn x() {
             },
         ];
         let mut f = Fonts::new(*FONT, *FONT, *FONT, *FONT);
-        render_owned(&z, (2, 2), 18.0, &mut f, 2.0, true);
-        render_owned(&z, (2, 2), 18.0, &mut f, 2.0, true).show();
+        let y = render_owned(&z, (2, 2), 18.0, &mut f, 2.0, true);
+        assert!(
+            render_owned(&z, (2, 2), 18.0, &mut f, 2.0, true).show() == y
+        );
         // let cells = Cell::load(include_bytes!("../cells"));
         // render_owned(
         //     &cells,
