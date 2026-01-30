@@ -556,11 +556,10 @@ fn into(
         }
         read!(while 10);
         read!(if 4);
-
-        let mut n = with.width() - wx_;
-        if n + x_ > i.width() {
-            n = i.width() - x_ - 1;
-        };
+		let mut n = with.width() - wx_;
+		if n + x_ + wx_ > i.width() {
+    		n = i.width() - x_ - wx_;   
+		}
         unsafe { core::hint::assert_unchecked(n < 10) };
         for k in 0..n {
             let x = k + wx_;
