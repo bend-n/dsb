@@ -513,7 +513,7 @@ fn into(
     for y in 0..with.height() {
         let mut wx_ = 0;
         macro_rules! read {
-            ($k:ident $n:literal) => {
+            ($k:ident $n:literal, $c:ident) => {
                 $k with.width() - wx_ >= $n {
                     // (wx..wx + $n) * 4
                     let first8 = unsafe {
@@ -539,9 +539,7 @@ fn into(
                             .read_unaligned()
                     }
                     .cast::<u16>();
-                    let c = Simd::from_array([color; $n].flatten())
-                        .cast::<u16>();
-                    let result = ((c * mask
+                    let result = (($c * mask
                         + (Simd::splat(255) - mask) * to.cast())
                         / Simd::splat(255))
                     .cast::<u8>();
@@ -555,8 +553,10 @@ fn into(
                 }
             };
         }
-        read!(while 10);
-        read!(if 4);
+        let c10 = Simd::from_array([color; 10].flatten()).cast::<u16>();
+        read!(while 10, c10);
+        let c4 = Simd::from_array([color; 4].flatten()).cast::<u16>();
+        read!(if 4, c4);
         let mut n = with.width() - wx_;
         if n + x_ + wx_ > i.width() {
             n = i.width() - x_ - wx_;
