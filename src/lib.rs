@@ -548,7 +548,8 @@ fn into(
                     if cfg!(miri) {
                         to_b.copy_from_slice(&result.to_array());
                     } else {
-                        result.store_select(to_b, Mask::from_bitmask(!0));
+                        unsafe { core::hint::assert_unchecked(to_b.len()==$n*3) };
+                        result.copy_to_slice(to_b);
                     }
                     wx_ += $n;
                 }
@@ -556,10 +557,10 @@ fn into(
         }
         read!(while 10);
         read!(if 4);
-		let mut n = with.width() - wx_;
-		if n + x_ + wx_ > i.width() {
-    		n = i.width() - x_ - wx_;   
-		}
+        let mut n = with.width() - wx_;
+        if n + x_ + wx_ > i.width() {
+            n = i.width() - x_ - wx_;
+        }
         unsafe { core::hint::assert_unchecked(n < 10) };
         for k in 0..n {
             let x = k + wx_;
