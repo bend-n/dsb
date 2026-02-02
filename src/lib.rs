@@ -557,9 +557,9 @@ fn into(
         read!(while 10, c10);
         let c4 = Simd::from_array([color; 4].flatten()).cast::<u16>();
         read!(if 4, c4);
-        let mut n = with.width() - wx_;
+        let mut n = with.width().saturating_sub(wx_);
         if n + x_ + wx_ > i.width() {
-            n = i.width() - x_ - wx_;
+            n = lower::saturating::math! { i.width() - x_ - wx_};
         }
         unsafe { core::hint::assert_unchecked(n < 10) };
         for k in 0..n {
