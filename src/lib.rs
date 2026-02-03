@@ -245,7 +245,9 @@ pub unsafe fn render(
                         let mut s = None;
                         let mut l = vec![];
                         shaper.shape_with(|x| {
-                            s = s.or(Some(x.glyphs[0].data));
+                            s = s.or_else(|| {
+                                x.glyphs.get(0).map(|x| x.data)
+                            });
                             l.extend(
                                 x.glyphs.into_iter().map(|x| (x.id, x.x)),
                             );
