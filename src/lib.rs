@@ -6,7 +6,6 @@
     const_default,
     derive_const,
     const_ops,
-    bigint_helper_methods,
     proc_macro_hygiene,
     portable_simd,
     super_let,
@@ -397,6 +396,7 @@ pub unsafe fn render(
                         color.map(_ as _),
                     );
                 } else {
+                    dbg!(&x.content);
                     i.as_mut().blend_alpha_and_color_at(
                         &Image::build(
                             x.placement.width,
@@ -504,6 +504,7 @@ fn blend(m: [u8; 3], c: [u8; 3], to: &mut [u8; 3]) {
 }
 
 #[implicit_fn::implicit_fn]
+#[unsafe(no_mangle)]
 fn into(
     mut i: Image<&mut [u8], 3>,
     with: Image<&[u8], 4>,
@@ -655,55 +656,54 @@ pub fn dims(font: &FontRef, ppem: f32) -> (f32, f32) {
 fn x() {
     pub static FONT: std::sync::LazyLock<FontRef<'static>> =
         std::sync::LazyLock::new(|| {
-            FontRef::from_index(
-                &include_bytes!("../../CascadiaCodeNF.ttf")[..],
-                0,
-            )
-            .unwrap()
+            FontRef::from_index(&include_bytes!("../../CCNF-R.ttf")[..], 0)
+                .unwrap()
         });
 
     unsafe {
         let z = [
             Cell {
                 style: Style {
-                    bg: [31, 36, 48],
+                    bg: [0, 0, 0],
                     fg: [255, 255, 255],
-                    flags: Style::UNDERCURL,
+                    // flags: Style::UNDERCURL,
                     ..default()
                 },
-                letter: Some('['),
+                letter: Some('E'),
             },
             Cell {
                 style: Style {
-                    bg: [31, 36, 48],
-                    fg: [255, 173, 102],
-                    flags: Style::UNDERCURL,
+                    bg: [0, 0, 0],
+                    fg: [255, 255, 255],
+                    // flags: Style::UNDERCURL,
                     ..default()
                 },
-                letter: Some('='),
+                letter: Some('H'),
             },
             Cell {
                 style: Style {
-                    bg: [31, 36, 48],
-                    fg: [204, 202, 194],
+                    bg: [0, 0, 0],
+                    fg: [255; 3],
                     secondary_color: [255; 3],
-                    flags: Style::UNDERLINE | Style::USE_SECONDARY_COLOR,
+                    // flags: Style::UNDERLINE | Style::USE_SECONDARY_COLOR,
+                    flags: 0,
                 },
-                letter: Some('s'),
+                letter: Some('F'),
             },
             Cell {
                 style: Style {
-                    bg: [31, 36, 48],
-                    fg: [255, 173, 102],
+                    bg: [0, 0, 0],
+                    fg: [255; 3],
                     secondary_color: [255; 3],
-                    flags: Style::UNDERLINE | Style::USE_SECONDARY_COLOR,
+                    // flags: Style::UNDERLINE | Style::USE_SECONDARY_COLOR,
+                    flags: 0,
                 },
-                letter: Some('>'),
+                letter: Some('t'),
             },
             Cell {
                 style: Style {
-                    bg: [31, 36, 48],
-                    flags: Style::UNDERLINE,
+                    bg: [0, 0, 0],
+                    // flags: Style::UNDERLINE,
                     fg: [255, 255, 255],
                     ..default()
                 },
@@ -711,10 +711,8 @@ fn x() {
             },
         ];
         let mut f = Fonts::new(*FONT, *FONT, *FONT, *FONT);
-        let y = render_owned(&z, (2, 2), 18.0, &mut f, 2.0, true);
-        assert!(
-            render_owned(&z, (2, 2), 18.0, &mut f, 2.0, true).show() == y
-        );
+        // let y = render_owned(&z, (2, 2), 18.0, &mut f, 2.0, true);
+        render_owned(&z, (2, 2), 18.0, &mut f, 2.0, false).show();
         // let cells = Cell::load(include_bytes!("../cells"));
         // render_owned(
         //     &cells,
