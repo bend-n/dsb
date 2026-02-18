@@ -512,7 +512,8 @@ fn into(
     color: [u8; 3],
 ) {
     use std::simd::prelude::*;
-
+    let c10 = Simd::from_array([color; 10].flatten()).cast::<u16>();
+    let c4 = Simd::from_array([color; 4].flatten()).cast::<u16>();
     for y in 0..with.height() {
         let mut wx_ = 0;
         macro_rules! read {
@@ -556,9 +557,8 @@ fn into(
                 }
             };
         }
-        let c10 = Simd::from_array([color; 10].flatten()).cast::<u16>();
+
         read!(while 10, c10);
-        let c4 = Simd::from_array([color; 4].flatten()).cast::<u16>();
         read!(if 4, c4);
         let mut n = with.width().saturating_sub(wx_);
         if n + x_ + wx_ > i.width() {
