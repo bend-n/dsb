@@ -620,6 +620,9 @@ pub unsafe fn fill_in(
     with: [u8; 3],
 ) {
     let iw = image.width();
+    if x1 >= iw {
+        return;
+    }
     let w = if x1 + w >= iw { iw - x1 - 1 } else { w };
     for x in x1..1 + w + x1 {
         image.set_pixel(x, y1, &with);
