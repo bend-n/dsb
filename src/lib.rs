@@ -337,7 +337,7 @@ pub unsafe fn render(
             //         )
             //     };
             // }
-            if let Some(_) = cell.letter {
+            if let Some(l) = cell.letter {
                 let (key, f) = match cell.style.flags {
                     f if (f & Style::BOLD != 0)
                         & (f & Style::ITALIC != 0) =>
@@ -355,17 +355,20 @@ pub unsafe fn render(
                         .variations(f.variations())
                         .hint(true)
                         .size(ppem);
-                    let x = Render::new(&[Source::Outline])
+                    let Some(x) = Render::new(&[Source::Outline])
                         .format(if subpixel {
                             Format::Subpixel
                         } else {
                             Format::Alpha
                         })
                         .render(&mut scbd.build(), id)
-                        .unwrap();
+                    else {
+                        eprintln!("strange. {l}");
+                        continue;
+                    };
                     fonts.cache.insert(key, x);
                 };
-                let x = fonts.cache.get_mut(&key).unwrap();
+                let x = &*fonts.cache.get_mut(&key).unwrap();
 
                 if x.placement.width == 0 {
                     continue;
@@ -396,7 +399,6 @@ pub unsafe fn render(
                         color.map(_ as _),
                     );
                 } else {
-                    dbg!(&x.content);
                     i.as_mut().blend_alpha_and_color_at(
                         &Image::build(
                             x.placement.width,
