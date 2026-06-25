@@ -52,7 +52,7 @@ impl Style {
     }
 }
 
-impl const Default for Style {
+const impl Default for Style {
     fn default() -> Self {
         Self {
             bg: [0; 3],
@@ -90,7 +90,7 @@ impl Debug for Cell {
         write!(f, "{}", self.letter.unwrap_or(' '))
     }
 }
-impl const BitOr<u8> for Style {
+const impl BitOr<u8> for Style {
     type Output = Self;
 
     fn bitor(self, rhs: u8) -> Self::Output {
@@ -100,13 +100,13 @@ impl const BitOr<u8> for Style {
         }
     }
 }
-impl const BitOrAssign<(u8, [u8; 3])> for Style {
+const impl BitOrAssign<(u8, [u8; 3])> for Style {
     fn bitor_assign(&mut self, (f, c): (u8, [u8; 3])) {
         self.flags |= f;
         self.fg = c;
     }
 }
-impl const BitAnd<(u8, [u8; 3])> for Style {
+const impl BitAnd<(u8, [u8; 3])> for Style {
     type Output = Style;
     fn bitand(mut self, (flags, bg): (u8, [u8; 3])) -> Self::Output {
         self.flags |= flags;
@@ -114,7 +114,7 @@ impl const BitAnd<(u8, [u8; 3])> for Style {
         self
     }
 }
-impl const BitAndAssign<(u8, [u8; 3])> for Style {
+const impl BitAndAssign<(u8, [u8; 3])> for Style {
     fn bitand_assign(&mut self, rhs: (u8, [u8; 3])) {
         *self = *self & rhs;
     }

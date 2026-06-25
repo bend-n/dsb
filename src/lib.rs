@@ -1,30 +1,19 @@
 #![allow(incomplete_features)]
 #![feature(
-    range_into_bounds,
-    array_try_from_fn,
-    const_array,
     const_default,
     derive_const,
     const_ops,
     proc_macro_hygiene,
     portable_simd,
-    super_let,
-    debug_closure_helpers,
     const_trait_impl,
-    anonymous_lifetime_in_impl_trait,
     deref_patterns,
     generic_const_exprs,
-    guard_patterns,
     impl_trait_in_bindings,
-    if_let_guard,
     import_trait_associated_functions
 )]
 #![allow(unsafe_op_in_unsafe_fn)]
-use std::array::try_from_fn;
 use std::iter::{successors, zip};
-use std::ops::IntoBounds;
 
-use Default::default;
 pub mod cell;
 use atools::prelude::*;
 use fimg::{Image, OverlayAt};
@@ -32,7 +21,6 @@ use itertools::Itertools;
 use lru_cache::LruCache;
 use swash::scale::{Render, ScaleContext, Source};
 use swash::shape::ShapeContext;
-use swash::shape::cluster::Glyph;
 use swash::text::cluster::{CharCluster, Parser, Token};
 use swash::text::{Codepoint, Script};
 use swash::zeno::Format;
@@ -133,7 +121,7 @@ pub unsafe fn render_owned(
 #[implicit_fn::implicit_fn]
 pub unsafe fn render(
     cells: &[Cell],
-    (c, r): (usize, usize),
+    (c, _r): (usize, usize),
     ppem: f32,
     fonts: &mut Fonts,
     line_spacing: f32,
@@ -202,7 +190,7 @@ pub unsafe fn render(
             )
         });
         let scx = &mut fonts.scx;
-        let sch = &mut fonts.shape_cache;
+        let _sch = &mut fonts.shape_cache;
         let mut cluster = CharCluster::new();
         macro_rules! input {
             ($rule:expr, $font:expr, $k: literal) => {
